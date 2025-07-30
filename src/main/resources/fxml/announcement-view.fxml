@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox fx:id="rootContainer" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.AnnouncementController">
+   <children>
+      <HBox styleClass="toolbar">
+         <children>
+            <Label styleClass="view-title" text="Team Announcements" />
+            <Region HBox.hgrow="ALWAYS" />
+            <ComboBox fx:id="priorityFilter" prefWidth="150.0" promptText="Filter by Priority" />
+            <Button onAction="#showHighPriority" styleClass="toolbar-button" text="High Priority" />
+            <Button fx:id="updateButton" styleClass="update-button" text="Update" />
+         </children>
+      </HBox>
+      
+      <SplitPane dividerPositions="0.6" VBox.vgrow="ALWAYS">
+         <items>
+            <VBox>
+               <children>
+                  <TableView fx:id="announcementsTable" VBox.vgrow="ALWAYS">
+                     <columns>
+                        <TableColumn fx:id="titleColumn" prefWidth="250.0" text="Title" />
+                        <TableColumn fx:id="priorityColumn" prefWidth="80.0" text="Priority" />
+                        <TableColumn fx:id="createdByColumn" prefWidth="120.0" text="Created By" />
+                        <TableColumn fx:id="createdAtColumn" prefWidth="130.0" text="Created" />
+                     </columns>
+                  </TableView>
+                  <HBox styleClass="button-bar">
+                     <children>
+                        <Button onAction="#clearSelection" text="Clear Selection" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+            
+            <VBox>
+               <children>
+                  <Label styleClass="details-title" text="Announcement Details" />
+                  <TextArea fx:id="contentTextArea" editable="false" VBox.vgrow="ALWAYS" wrapText="true" />
+               </children>
+            </VBox>
+         </items>
+      </SplitPane>
+      
+      <HBox styleClass="status-bar">
+         <children>
+            <Label fx:id="statusLabel" text="Ready" />
+         </children>
+      </HBox>
+   </children>
+</VBox>

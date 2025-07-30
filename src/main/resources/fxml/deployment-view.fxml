@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox fx:id="rootContainer" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.DeploymentController">
+   <children>
+      <HBox styleClass="toolbar">
+         <children>
+            <Label styleClass="view-title" text="Software Deployments" />
+            <Region HBox.hgrow="ALWAYS" />
+            <ComboBox fx:id="environmentFilter" prefWidth="150.0" promptText="Filter by Environment" />
+            <ComboBox fx:id="statusFilter" prefWidth="150.0" promptText="Filter by Status" />
+            <Button onAction="#showProduction" styleClass="toolbar-button" text="Production" />
+            <Button onAction="#showRecent" styleClass="toolbar-button" text="Recent" />
+            <Button onAction="#showActive" styleClass="toolbar-button" text="Active" />
+            <Button fx:id="updateButton" styleClass="update-button" text="Update" />
+         </children>
+      </HBox>
+      
+      <SplitPane dividerPositions="0.65" VBox.vgrow="ALWAYS">
+         <items>
+            <VBox>
+               <children>
+                  <TableView fx:id="deploymentsTable" VBox.vgrow="ALWAYS">
+                     <columns>
+                        <TableColumn fx:id="releaseNameColumn" prefWidth="150.0" text="Release" />
+                        <TableColumn fx:id="versionColumn" prefWidth="80.0" text="Version" />
+                        <TableColumn fx:id="environmentColumn" prefWidth="90.0" text="Environment" />
+                        <TableColumn fx:id="statusColumn" prefWidth="90.0" text="Status" />
+                        <TableColumn fx:id="deploymentDateColumn" prefWidth="130.0" text="Deployment Date" />
+                        <TableColumn fx:id="driverColumn" prefWidth="120.0" text="Driver" />
+                     </columns>
+                  </TableView>
+                  <HBox styleClass="button-bar">
+                     <children>
+                        <Button onAction="#clearSelection" text="Clear Selection" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+            
+            <VBox>
+               <children>
+                  <Label styleClass="details-title" text="Release Notes" />
+                  <TextArea fx:id="releaseNotesTextArea" editable="false" VBox.vgrow="ALWAYS" wrapText="true" />
+               </children>
+            </VBox>
+         </items>
+      </SplitPane>
+      
+      <HBox styleClass="status-bar">
+         <children>
+            <Label fx:id="statusLabel" text="Ready" />
+         </children>
+      </HBox>
+   </children>
+</VBox>

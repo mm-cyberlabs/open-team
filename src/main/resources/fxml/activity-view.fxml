@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox fx:id="rootContainer" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.ActivityController">
+   <children>
+      <HBox styleClass="toolbar">
+         <children>
+            <Label styleClass="view-title" text="Team Activities" />
+            <Region HBox.hgrow="ALWAYS" />
+            <ComboBox fx:id="typeFilter" prefWidth="150.0" promptText="Filter by Type" />
+            <Button onAction="#showUpcoming" styleClass="toolbar-button" text="Upcoming" />
+            <Button onAction="#showToday" styleClass="toolbar-button" text="Today" />
+            <Button fx:id="updateButton" styleClass="update-button" text="Update" />
+         </children>
+      </HBox>
+      
+      <SplitPane dividerPositions="0.6" VBox.vgrow="ALWAYS">
+         <items>
+            <VBox>
+               <children>
+                  <TableView fx:id="activitiesTable" VBox.vgrow="ALWAYS">
+                     <columns>
+                        <TableColumn fx:id="titleColumn" prefWidth="200.0" text="Title" />
+                        <TableColumn fx:id="typeColumn" prefWidth="80.0" text="Type" />
+                        <TableColumn fx:id="scheduledDateColumn" prefWidth="130.0" text="Scheduled" />
+                        <TableColumn fx:id="locationColumn" prefWidth="120.0" text="Location" />
+                        <TableColumn fx:id="createdByColumn" prefWidth="100.0" text="Created By" />
+                     </columns>
+                  </TableView>
+                  <HBox styleClass="button-bar">
+                     <children>
+                        <Button onAction="#clearSelection" text="Clear Selection" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+            
+            <VBox>
+               <children>
+                  <Label styleClass="details-title" text="Activity Details" />
+                  <TextArea fx:id="detailsTextArea" editable="false" VBox.vgrow="ALWAYS" wrapText="true" />
+               </children>
+            </VBox>
+         </items>
+      </SplitPane>
+      
+      <HBox styleClass="status-bar">
+         <children>
+            <Label fx:id="statusLabel" text="Ready" />
+         </children>
+      </HBox>
+   </children>
+</VBox>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.MainController">
+   <left>
+      <VBox fx:id="navigationMenu" prefWidth="200.0" styleClass="navigation-menu">
+         <children>
+            <Label styleClass="nav-title" text="Open Team" />
+            <Separator />
+            <Button fx:id="announcementsButton" maxWidth="1.7976931348623157E308" styleClass="nav-button" text="📢 Announcements" />
+            <Button fx:id="activitiesButton" maxWidth="1.7976931348623157E308" styleClass="nav-button" text="🗓️ Activities" />
+            <Button fx:id="deploymentsButton" maxWidth="1.7976931348623157E308" styleClass="nav-button" text="🚀 Deployments" />
+            <Separator />
+            <Button maxWidth="1.7976931348623157E308" onAction="#refreshCurrentView" styleClass="nav-button" text="🔄 Refresh" />
+            <Button maxWidth="1.7976931348623157E308" onAction="#showAbout" styleClass="nav-button" text="ℹ️ About" />
+         </children>
+      </VBox>
+   </left>
+   <center>
+      <StackPane fx:id="contentArea" />
+   </center>
+   <bottom>
+      <HBox styleClass="status-bar">
+         <children>
+            <Label fx:id="lastUpdateLabel" text="Last updated: --" />
+         </children>
+      </HBox>
+   </bottom>
+</BorderPane>
