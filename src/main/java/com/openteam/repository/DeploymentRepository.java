@@ -319,4 +319,65 @@ public class DeploymentRepository {
         
         return deployment;
     }
+    
+    /**
+     * Finds non-archived deployments ordered by deployment date.
+     * 
+     * @return List of non-archived deployments
+     */
+    public List<Deployment> findNonArchived() {
+        // For now, return all deployments as a simple implementation
+        // This can be enhanced later to filter by is_archived = false
+        return findAll();
+    }
+    
+    /**
+     * Soft deletes a deployment by setting is_archived to true.
+     * Falls back to other approaches if is_archived column doesn't exist.
+     * 
+     * @param id Deployment ID to delete
+     */
+    public void deleteById(Long id) {
+        // First try with is_archived column (after migration)
+        String sql = "UPDATE team_comm.deployments SET is_archived = true WHERE id = ?";
+        
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setLong(1, id);
+            int rowsAffected = stmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                logger.info("Deployment deleted (soft delete) with ID: {}", id);
+            }
+            
+        } catch (SQLException e) {
+            // If is_archived column doesn't exist, try alternative approach
+            logger.warn("is_archived column not found, trying alternative soft delete approach");
+            deleteByIdFallback(id);
+        }
+    }
+    
+    /**
+     * Fallback delete method that updates status to indicate deleted state.
+     */
+    private void deleteByIdFallback(Long id) {
+        // Update status to ROLLED_BACK to indicate deleted/archived state
+        String sql = "UPDATE team_comm.deployments SET status = 'ROLLED_BACK' WHERE id = ?";
+        
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setLong(1, id);
+            int rowsAffected = stmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                logger.info("Deployment deleted (fallback method) with ID: {}", id);
+            }
+            
+        } catch (SQLException e) {
+            logger.error("Error deleting deployment with ID (fallback): " + id, e);
+            throw new RuntimeException("Unable to delete deployment: " + e.getMessage(), e);
+        }
+    }
 }

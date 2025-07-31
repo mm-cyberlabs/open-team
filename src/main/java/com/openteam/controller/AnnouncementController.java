@@ -2,8 +2,10 @@ package com.openteam.controller;
 
 import com.openteam.model.Announcement;
 import com.openteam.model.Priority;
+import com.openteam.model.User;
 import com.openteam.service.AnnouncementService;
 import com.openteam.util.DateTimeUtil;
+import com.openteam.util.DialogUtils;
 import com.openteam.util.UIUtils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -18,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
@@ -33,17 +36,32 @@ public class AnnouncementController implements Initializable {
     @FXML private TableColumn<Announcement, String> priorityColumn;
     @FXML private TableColumn<Announcement, String> createdByColumn;
     @FXML private TableColumn<Announcement, String> createdAtColumn;
+    @FXML private TableColumn<Announcement, String> archivedColumn;
     @FXML private Button updateButton;
     @FXML private Label statusLabel;
     @FXML private TextArea contentTextArea;
     @FXML private ComboBox<Priority> priorityFilter;
+    @FXML private CheckBox showArchivedCheckBox;
+    @FXML private SplitPane mainSplitPane;
     
     private final AnnouncementService announcementService;
     private final ObservableList<Announcement> announcements;
+    private final User currentUser; // For CRUD operations
     
     public AnnouncementController() {
         this.announcementService = new AnnouncementService();
         this.announcements = FXCollections.observableArrayList();
+        // TODO: Get current user from session/authentication
+        this.currentUser = createDefaultUser();
+    }
+    
+    private User createDefaultUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setUsername("admin");
+        user.setFullName("System Administrator");
+        user.setEmail("admin@company.com");
+        return user;
     }
     
     @Override
@@ -53,6 +71,7 @@ public class AnnouncementController implements Initializable {
         setupTable();
         setupPriorityFilter();
         setupEventHandlers();
+        setupRightPanelToggle();
         loadAnnouncements();
     }
     
@@ -77,6 +96,12 @@ public class AnnouncementController implements Initializable {
             )
         );
         
+        archivedColumn.setCellValueFactory(cellData -> 
+            new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getIsArchived() != null && cellData.getValue().getIsArchived() ? "Yes" : "No"
+            )
+        );
+        
         // Set custom cell factory for priority column to show colors
         priorityColumn.setCellFactory(column -> new TableCell<Announcement, String>() {
             @Override
@@ -97,14 +122,33 @@ public class AnnouncementController implements Initializable {
         
         announcementsTable.setItems(announcements);
         
+        // Prevent extra empty columns from appearing
+        announcementsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        
         // Handle row selection
         announcementsTable.getSelectionModel().selectedItemProperty().addListener(
             (obs, oldSelection, newSelection) -> {
                 if (newSelection != null) {
                     displayAnnouncementContent(newSelection);
+                    showRightPanel();
+                } else {
+                    hideRightPanel();
                 }
             }
         );
+        
+        // Allow clicking on selected row to deselect
+        announcementsTable.setRowFactory(tv -> {
+            TableRow<Announcement> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 1 && !row.isEmpty()) {
+                    if (row.isSelected()) {
+                        announcementsTable.getSelectionModel().clearSelection();
+                    }
+                }
+            });
+            return row;
+        });
     }
     
     /**
@@ -140,6 +184,69 @@ public class AnnouncementController implements Initializable {
      */
     private void setupEventHandlers() {
         updateButton.setOnAction(event -> refreshData());
+        
+        // Archive filter checkbox
+        showArchivedCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            filterByArchiveStatus();
+        });
+    }
+    
+    private void setupRightPanelToggle() {
+        // Initially hide the right panel
+        hideRightPanel();
+        
+        // Add listener for divider position changes to make table responsive
+        mainSplitPane.getDividers().get(0).positionProperty().addListener((obs, oldPos, newPos) -> {
+            adjustTableColumns(newPos.doubleValue());
+        });
+    }
+    
+    private void showRightPanel() {
+        if (mainSplitPane.getDividers().size() > 0) {
+            mainSplitPane.setDividerPositions(0.6);
+            mainSplitPane.getItems().get(1).setVisible(true);
+            mainSplitPane.getItems().get(1).setManaged(true);
+        }
+    }
+    
+    private void hideRightPanel() {
+        if (mainSplitPane.getDividers().size() > 0) {
+            mainSplitPane.setDividerPositions(1.0);
+            mainSplitPane.getItems().get(1).setVisible(false);
+            mainSplitPane.getItems().get(1).setManaged(false);
+        }
+        contentTextArea.clear();
+    }
+    
+    private void adjustTableColumns(double dividerPosition) {
+        // Calculate available width for table based on divider position
+        double tableWidthFactor = dividerPosition;
+        double baseWidth = 800; // Assume base container width of 800px
+        double availableTableWidth = baseWidth * tableWidthFactor;
+        
+        // Adjust column widths proportionally
+        if (availableTableWidth > 600) {
+            // Full width - expand columns
+            titleColumn.setPrefWidth(300);
+            priorityColumn.setPrefWidth(100);
+            createdByColumn.setPrefWidth(150);
+            createdAtColumn.setPrefWidth(150);
+            archivedColumn.setPrefWidth(90);
+        } else {
+            // Compressed width - shrink columns
+            titleColumn.setPrefWidth(250);
+            priorityColumn.setPrefWidth(80);
+            createdByColumn.setPrefWidth(120);
+            createdAtColumn.setPrefWidth(130);
+            archivedColumn.setPrefWidth(80);
+        }
+        
+        // Force table to refresh layout
+        announcementsTable.refresh();
+    }
+    
+    private void filterByArchiveStatus() {
+        loadAnnouncements();
     }
     
     /**
@@ -255,6 +362,97 @@ public class AnnouncementController implements Initializable {
     @FXML
     private void clearSelection() {
         announcementsTable.getSelectionModel().clearSelection();
-        contentTextArea.clear();
+        hideRightPanel();
+    }
+    
+    /**
+     * Handles creating a new announcement.
+     */
+    @FXML
+    private void createAnnouncement() {
+        Optional<Announcement> result = DialogUtils.showAnnouncementDialog(null, currentUser);
+        
+        result.ifPresent(announcement -> {
+            try {
+                Announcement created = announcementService.createAnnouncement(
+                    announcement.getTitle(),
+                    announcement.getContent(),
+                    announcement.getPriority(),
+                    currentUser
+                );
+                
+                refreshData();
+                statusLabel.setText("Announcement created successfully");
+                logger.info("Created announcement: {}", created.getTitle());
+                
+            } catch (Exception e) {
+                logger.error("Error creating announcement", e);
+                UIUtils.showErrorDialog("Error Creating Announcement", 
+                    "Failed to create announcement: " + e.getMessage());
+            }
+        });
+    }
+    
+    /**
+     * Handles editing the selected announcement.
+     */
+    @FXML
+    private void editAnnouncement() {
+        Announcement selected = announcementsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            UIUtils.showWarningDialog("No Selection", "Please select an announcement to edit.");
+            return;
+        }
+        
+        Optional<Announcement> result = DialogUtils.showAnnouncementDialog(selected, currentUser);
+        
+        result.ifPresent(announcement -> {
+            try {
+                Announcement updated = announcementService.updateAnnouncement(
+                    announcement.getId(),
+                    announcement.getTitle(),
+                    announcement.getContent(),
+                    announcement.getPriority(),
+                    currentUser
+                );
+                
+                refreshData();
+                statusLabel.setText("Announcement updated successfully");
+                logger.info("Updated announcement: {}", updated.getTitle());
+                
+            } catch (Exception e) {
+                logger.error("Error updating announcement", e);
+                UIUtils.showErrorDialog("Error Updating Announcement", 
+                    "Failed to update announcement: " + e.getMessage());
+            }
+        });
+    }
+    
+    /**
+     * Handles deleting the selected announcement.
+     */
+    @FXML
+    private void deleteAnnouncement() {
+        Announcement selected = announcementsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            UIUtils.showWarningDialog("No Selection", "Please select an announcement to delete.");
+            return;
+        }
+        
+        boolean confirmed = DialogUtils.showDeleteConfirmation("announcement", selected.getTitle());
+        
+        if (confirmed) {
+            try {
+                announcementService.deleteAnnouncement(selected.getId());
+                refreshData();
+                statusLabel.setText("Announcement deleted (archived) successfully");
+                logger.info("Deleted announcement: {}", selected.getTitle());
+                
+            } catch (Exception e) {
+                logger.error("Error deleting announcement", e);
+                UIUtils.showErrorDialog("Error Deleting Announcement", 
+                    "Failed to delete announcement: " + e.getMessage());
+            }
+        }
     }
 }

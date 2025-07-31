@@ -9,6 +9,7 @@
          <children>
             <Label styleClass="view-title" text="Software Deployments" />
             <Region HBox.hgrow="ALWAYS" />
+            <CheckBox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
             <ComboBox fx:id="environmentFilter" prefWidth="150.0" promptText="Filter by Environment" />
             <ComboBox fx:id="statusFilter" prefWidth="150.0" promptText="Filter by Status" />
             <Button onAction="#showProduction" styleClass="toolbar-button" text="Production" />
@@ -18,7 +19,7 @@
          </children>
       </HBox>
       
-      <SplitPane dividerPositions="0.65" VBox.vgrow="ALWAYS">
+      <SplitPane fx:id="mainSplitPane" dividerPositions="0.65" VBox.vgrow="ALWAYS">
          <items>
             <VBox>
                <children>
@@ -30,10 +31,15 @@
                         <TableColumn fx:id="statusColumn" prefWidth="90.0" text="Status" />
                         <TableColumn fx:id="deploymentDateColumn" prefWidth="130.0" text="Deployment Date" />
                         <TableColumn fx:id="driverColumn" prefWidth="120.0" text="Driver" />
+                        <TableColumn fx:id="archivedColumn" prefWidth="80.0" text="Archived" />
                      </columns>
                   </TableView>
                   <HBox styleClass="button-bar">
                      <children>
+                        <Button onAction="#createDeployment" styleClass="toolbar-button" text="Add New" />
+                        <Button onAction="#editDeployment" styleClass="toolbar-button" text="Edit" />
+                        <Button onAction="#deleteDeployment" styleClass="toolbar-button" text="Delete" />
+                        <Region HBox.hgrow="ALWAYS" />
                         <Button onAction="#clearSelection" text="Clear Selection" />
                      </children>
                   </HBox>

@@ -19,10 +19,12 @@ public class Activity {
     private User createdBy;
     private User updatedBy;
     private Boolean isActive;
+    private Boolean isArchived;
     
     public Activity() {
         this.activityType = ActivityType.GENERAL;
         this.isActive = true;
+        this.isArchived = false;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -128,6 +130,14 @@ public class Activity {
         this.isActive = isActive;
     }
     
+    public Boolean getIsArchived() {
+        return isArchived;
+    }
+    
+    public void setIsArchived(Boolean isArchived) {
+        this.isArchived = isArchived;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -150,6 +160,7 @@ public class Activity {
                 ", scheduledDate=" + scheduledDate +
                 ", location='" + location + '\'' +
                 ", isActive=" + isActive +
+                ", isArchived=" + isArchived +
                 '}';
     }
 }

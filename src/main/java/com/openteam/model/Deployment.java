@@ -20,10 +20,12 @@ public class Deployment {
     private LocalDateTime updatedAt;
     private User createdBy;
     private User updatedBy;
+    private Boolean isArchived;
     
     public Deployment() {
         this.environment = Environment.PRODUCTION;
         this.status = DeploymentStatus.PLANNED;
+        this.isArchived = false;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -140,6 +142,14 @@ public class Deployment {
         this.updatedBy = updatedBy;
     }
     
+    public Boolean getIsArchived() {
+        return isArchived;
+    }
+    
+    public void setIsArchived(Boolean isArchived) {
+        this.isArchived = isArchived;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -162,6 +172,7 @@ public class Deployment {
                 ", environment=" + environment +
                 ", status=" + status +
                 ", deploymentDateTime=" + deploymentDateTime +
+                ", isArchived=" + isArchived +
                 '}';
     }
 }

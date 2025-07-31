@@ -54,6 +54,16 @@ public class UIUtils {
     }
     
     /**
+     * Shows an error dialog with title and message.
+     * 
+     * @param title Dialog title
+     * @param message Dialog message
+     */
+    public static void showErrorDialog(String title, String message) {
+        showErrorDialog(title, null, message);
+    }
+    
+    /**
      * Shows a warning dialog.
      * 
      * @param title Dialog title
@@ -69,6 +79,16 @@ public class UIUtils {
         
         logger.warn("Warning dialog shown - Title: {}, Header: {}, Content: {}", 
                    title, header, content);
+    }
+    
+    /**
+     * Shows a warning dialog with title and message.
+     * 
+     * @param title Dialog title
+     * @param message Dialog message
+     */
+    public static void showWarningDialog(String title, String message) {
+        showWarningDialog(title, null, message);
     }
     
     /**

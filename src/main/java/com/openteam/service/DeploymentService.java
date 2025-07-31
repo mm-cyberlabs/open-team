@@ -36,6 +36,16 @@ public class DeploymentService {
     }
     
     /**
+     * Retrieves non-archived deployments.
+     * 
+     * @return List of non-archived deployments ordered by deployment date
+     */
+    public List<Deployment> getNonArchivedDeployments() {
+        logger.debug("Retrieving non-archived deployments");
+        return deploymentRepository.findNonArchived();
+    }
+    
+    /**
      * Retrieves a deployment by ID.
      * 
      * @param id Deployment ID
@@ -239,5 +249,21 @@ public class DeploymentService {
         if (user == null || user.getId() == null) {
             throw new IllegalArgumentException("Valid user is required for deployment operations");
         }
+    }
+    
+    /**
+     * Deletes a deployment (soft delete).
+     * 
+     * @param id Deployment ID to delete
+     */
+    public void deleteDeployment(Long id) {
+        logger.info("Deleting deployment with ID: {}", id);
+        
+        Optional<Deployment> existingOpt = deploymentRepository.findById(id);
+        if (existingOpt.isEmpty()) {
+            throw new IllegalArgumentException("Deployment not found with ID: " + id);
+        }
+        
+        deploymentRepository.deleteById(id);
     }
 }

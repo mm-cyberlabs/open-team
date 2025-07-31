@@ -17,10 +17,12 @@ public class Announcement {
     private User createdBy;
     private User updatedBy;
     private Boolean isActive;
+    private Boolean isArchived;
     
     public Announcement() {
         this.priority = Priority.NORMAL;
         this.isActive = true;
+        this.isArchived = false;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -107,6 +109,14 @@ public class Announcement {
         this.isActive = isActive;
     }
     
+    public Boolean getIsArchived() {
+        return isArchived;
+    }
+    
+    public void setIsArchived(Boolean isArchived) {
+        this.isArchived = isArchived;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -128,6 +138,7 @@ public class Announcement {
                 ", priority=" + priority +
                 ", createdAt=" + createdAt +
                 ", isActive=" + isActive +
+                ", isArchived=" + isArchived +
                 '}';
     }
 }

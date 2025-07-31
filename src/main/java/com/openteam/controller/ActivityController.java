@@ -2,8 +2,10 @@ package com.openteam.controller;
 
 import com.openteam.model.Activity;
 import com.openteam.model.ActivityType;
+import com.openteam.model.User;
 import com.openteam.service.ActivityService;
 import com.openteam.util.DateTimeUtil;
+import com.openteam.util.DialogUtils;
 import com.openteam.util.UIUtils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -18,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
@@ -34,17 +37,31 @@ public class ActivityController implements Initializable {
     @FXML private TableColumn<Activity, String> scheduledDateColumn;
     @FXML private TableColumn<Activity, String> locationColumn;
     @FXML private TableColumn<Activity, String> createdByColumn;
+    @FXML private TableColumn<Activity, String> archivedColumn;
     @FXML private Button updateButton;
     @FXML private Label statusLabel;
     @FXML private TextArea detailsTextArea;
     @FXML private ComboBox<ActivityType> typeFilter;
+    @FXML private CheckBox showArchivedCheckBox;
+    @FXML private SplitPane mainSplitPane;
     
     private final ActivityService activityService;
     private final ObservableList<Activity> activities;
+    private final User currentUser;
     
     public ActivityController() {
         this.activityService = new ActivityService();
         this.activities = FXCollections.observableArrayList();
+        this.currentUser = createDefaultUser();
+    }
+    
+    private User createDefaultUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setUsername("admin");
+        user.setFullName("System Administrator");
+        user.setEmail("admin@company.com");
+        return user;
     }
     
     @Override
@@ -77,6 +94,9 @@ public class ActivityController implements Initializable {
         );
         
         activitiesTable.setItems(activities);
+        
+        // Prevent extra empty columns from appearing
+        activitiesTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         
         activitiesTable.getSelectionModel().selectedItemProperty().addListener(
             (obs, oldSelection, newSelection) -> {
@@ -219,5 +239,91 @@ public class ActivityController implements Initializable {
     private void clearSelection() {
         activitiesTable.getSelectionModel().clearSelection();
         detailsTextArea.clear();
+    }
+    
+    @FXML
+    private void createActivity() {
+        Optional<Activity> result = DialogUtils.showActivityDialog(null, currentUser);
+        
+        result.ifPresent(activity -> {
+            try {
+                Activity created = activityService.createActivity(
+                    activity.getTitle(),
+                    activity.getDescription(),
+                    activity.getActivityType(),
+                    activity.getScheduledDate(),
+                    activity.getLocation(),
+                    currentUser
+                );
+                
+                refreshData();
+                statusLabel.setText("Activity created successfully");
+                logger.info("Created activity: {}", created.getTitle());
+                
+            } catch (Exception e) {
+                logger.error("Error creating activity", e);
+                UIUtils.showErrorDialog("Error Creating Activity", 
+                    "Failed to create activity: " + e.getMessage());
+            }
+        });
+    }
+    
+    @FXML
+    private void editActivity() {
+        Activity selected = activitiesTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            UIUtils.showWarningDialog("No Selection", "Please select an activity to edit.");
+            return;
+        }
+        
+        Optional<Activity> result = DialogUtils.showActivityDialog(selected, currentUser);
+        
+        result.ifPresent(activity -> {
+            try {
+                Activity updated = activityService.updateActivity(
+                    activity.getId(),
+                    activity.getTitle(),
+                    activity.getDescription(),
+                    activity.getActivityType(),
+                    activity.getScheduledDate(),
+                    activity.getLocation(),
+                    currentUser
+                );
+                
+                refreshData();
+                statusLabel.setText("Activity updated successfully");
+                logger.info("Updated activity: {}", updated.getTitle());
+                
+            } catch (Exception e) {
+                logger.error("Error updating activity", e);
+                UIUtils.showErrorDialog("Error Updating Activity", 
+                    "Failed to update activity: " + e.getMessage());
+            }
+        });
+    }
+    
+    @FXML
+    private void deleteActivity() {
+        Activity selected = activitiesTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            UIUtils.showWarningDialog("No Selection", "Please select an activity to delete.");
+            return;
+        }
+        
+        boolean confirmed = DialogUtils.showDeleteConfirmation("activity", selected.getTitle());
+        
+        if (confirmed) {
+            try {
+                activityService.deleteActivity(selected.getId());
+                refreshData();
+                statusLabel.setText("Activity deleted (archived) successfully");
+                logger.info("Deleted activity: {}", selected.getTitle());
+                
+            } catch (Exception e) {
+                logger.error("Error deleting activity", e);
+                UIUtils.showErrorDialog("Error Deleting Activity", 
+                    "Failed to delete activity: " + e.getMessage());
+            }
+        }
     }
 }

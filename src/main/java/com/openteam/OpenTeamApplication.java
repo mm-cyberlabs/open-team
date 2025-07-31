@@ -87,6 +87,10 @@ public class OpenTeamApplication extends Application {
             DatabaseConnection dbConnection = DatabaseConnection.getInstance();
             if (dbConnection.testConnection()) {
                 logger.info("Database connection test successful");
+                
+                // Run database migrations to ensure schema is up to date
+                com.openteam.util.DatabaseMigrationUtil.ensureArchiveColumnsExist();
+                
                 return true;
             } else {
                 logger.error("Database connection test failed");

@@ -3,8 +3,10 @@ package com.openteam.controller;
 import com.openteam.model.Deployment;
 import com.openteam.model.DeploymentStatus;
 import com.openteam.model.Environment;
+import com.openteam.model.User;
 import com.openteam.service.DeploymentService;
 import com.openteam.util.DateTimeUtil;
+import com.openteam.util.DialogUtils;
 import com.openteam.util.UIUtils;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -19,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /**
@@ -36,18 +39,32 @@ public class DeploymentController implements Initializable {
     @FXML private TableColumn<Deployment, String> statusColumn;
     @FXML private TableColumn<Deployment, String> deploymentDateColumn;
     @FXML private TableColumn<Deployment, String> driverColumn;
+    @FXML private TableColumn<Deployment, String> archivedColumn;
     @FXML private Button updateButton;
     @FXML private Label statusLabel;
     @FXML private TextArea releaseNotesTextArea;
     @FXML private ComboBox<Environment> environmentFilter;
     @FXML private ComboBox<DeploymentStatus> statusFilter;
+    @FXML private CheckBox showArchivedCheckBox;
+    @FXML private SplitPane mainSplitPane;
     
     private final DeploymentService deploymentService;
     private final ObservableList<Deployment> deployments;
+    private final User currentUser;
     
     public DeploymentController() {
         this.deploymentService = new DeploymentService();
         this.deployments = FXCollections.observableArrayList();
+        this.currentUser = createDefaultUser();
+    }
+    
+    private User createDefaultUser() {
+        User user = new User();
+        user.setId(1L);
+        user.setUsername("admin");
+        user.setFullName("System Administrator");
+        user.setEmail("admin@company.com");
+        return user;
     }
     
     @Override
@@ -57,6 +74,7 @@ public class DeploymentController implements Initializable {
         setupTable();
         setupFilters();
         setupEventHandlers();
+        setupRightPanelToggle();
         loadDeployments();
     }
     
@@ -81,6 +99,12 @@ public class DeploymentController implements Initializable {
         driverColumn.setCellValueFactory(cellData -> 
             new javafx.beans.property.SimpleStringProperty(
                 cellData.getValue().getDriverUser().getFullName()
+            )
+        );
+        
+        archivedColumn.setCellValueFactory(cellData -> 
+            new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getIsArchived() != null && cellData.getValue().getIsArchived() ? "Yes" : "No"
             )
         );
         
@@ -121,13 +145,32 @@ public class DeploymentController implements Initializable {
         
         deploymentsTable.setItems(deployments);
         
+        // Prevent extra empty columns from appearing
+        deploymentsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        
         deploymentsTable.getSelectionModel().selectedItemProperty().addListener(
             (obs, oldSelection, newSelection) -> {
                 if (newSelection != null) {
                     displayReleaseNotes(newSelection);
+                    showRightPanel();
+                } else {
+                    hideRightPanel();
                 }
             }
         );
+        
+        // Allow clicking on selected row to deselect
+        deploymentsTable.setRowFactory(tv -> {
+            TableRow<Deployment> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 1 && !row.isEmpty()) {
+                    if (row.isSelected()) {
+                        deploymentsTable.getSelectionModel().clearSelection();
+                    }
+                }
+            });
+            return row;
+        });
     }
     
     private void setupFilters() {
@@ -182,6 +225,72 @@ public class DeploymentController implements Initializable {
     
     private void setupEventHandlers() {
         updateButton.setOnAction(event -> refreshData());
+        
+        // Archive filter checkbox
+        showArchivedCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            filterByArchiveStatus();
+        });
+    }
+    
+    private void setupRightPanelToggle() {
+        // Initially hide the right panel
+        hideRightPanel();
+        
+        // Add listener for divider position changes to make table responsive
+        mainSplitPane.getDividers().get(0).positionProperty().addListener((obs, oldPos, newPos) -> {
+            adjustTableColumns(newPos.doubleValue());
+        });
+    }
+    
+    private void showRightPanel() {
+        if (mainSplitPane.getDividers().size() > 0) {
+            mainSplitPane.setDividerPositions(0.65);
+            mainSplitPane.getItems().get(1).setVisible(true);
+            mainSplitPane.getItems().get(1).setManaged(true);
+        }
+    }
+    
+    private void hideRightPanel() {
+        if (mainSplitPane.getDividers().size() > 0) {
+            mainSplitPane.setDividerPositions(1.0);
+            mainSplitPane.getItems().get(1).setVisible(false);
+            mainSplitPane.getItems().get(1).setManaged(false);
+        }
+        releaseNotesTextArea.clear();
+    }
+    
+    private void adjustTableColumns(double dividerPosition) {
+        // Calculate available width for table based on divider position
+        // When divider is at 1.0 (right panel hidden), table gets full width
+        // When divider is at 0.65 (right panel visible), table gets 65% width
+        
+        double tableWidthFactor = dividerPosition;
+        double baseWidth = 800; // Assume base container width of 800px
+        double availableTableWidth = baseWidth * tableWidthFactor;
+        
+        // Adjust column widths proportionally
+        if (availableTableWidth > 600) {
+            // Full width - expand columns
+            releaseNameColumn.setPrefWidth(200);
+            versionColumn.setPrefWidth(100);
+            environmentColumn.setPrefWidth(120);
+            statusColumn.setPrefWidth(120);
+            deploymentDateColumn.setPrefWidth(150);
+            driverColumn.setPrefWidth(140);
+            archivedColumn.setPrefWidth(90);
+        } else {
+            // Compressed width - shrink columns
+            releaseNameColumn.setPrefWidth(150);
+            versionColumn.setPrefWidth(80);
+            environmentColumn.setPrefWidth(90);
+            statusColumn.setPrefWidth(90);
+            deploymentDateColumn.setPrefWidth(130);
+            driverColumn.setPrefWidth(120);
+            archivedColumn.setPrefWidth(80);
+        }
+        
+        // Force table to refresh layout
+        deploymentsTable.refresh();
     }
     
     private void loadDeployments() {
@@ -189,7 +298,13 @@ public class DeploymentController implements Initializable {
             updateButton.setDisable(true);
             statusLabel.setText("Loading deployments...");
             
-            List<Deployment> deploymentList = deploymentService.getAllDeployments();
+            List<Deployment> deploymentList;
+            if (showArchivedCheckBox.isSelected()) {
+                deploymentList = deploymentService.getAllDeployments();
+            } else {
+                deploymentList = deploymentService.getNonArchivedDeployments();
+            }
+            
             deployments.clear();
             deployments.addAll(deploymentList);
             
@@ -203,6 +318,10 @@ public class DeploymentController implements Initializable {
         } finally {
             updateButton.setDisable(false);
         }
+    }
+    
+    private void filterByArchiveStatus() {
+        loadDeployments();
     }
     
     public void refreshData() {
@@ -321,6 +440,96 @@ public class DeploymentController implements Initializable {
     @FXML
     private void clearSelection() {
         deploymentsTable.getSelectionModel().clearSelection();
-        releaseNotesTextArea.clear();
+        hideRightPanel();
+    }
+    
+    @FXML
+    private void createDeployment() {
+        Optional<Deployment> result = DialogUtils.showDeploymentDialog(null, currentUser);
+        
+        result.ifPresent(deployment -> {
+            try {
+                Deployment created = deploymentService.createDeployment(
+                    deployment.getReleaseName(),
+                    deployment.getVersion(),
+                    deployment.getDeploymentDateTime(),
+                    deployment.getDriverUser(),
+                    deployment.getReleaseNotes(),
+                    deployment.getEnvironment(),
+                    deployment.getStatus(),
+                    currentUser
+                );
+                
+                refreshData();
+                statusLabel.setText("Deployment created successfully");
+                logger.info("Created deployment: {}", created.getReleaseName());
+                
+            } catch (Exception e) {
+                logger.error("Error creating deployment", e);
+                UIUtils.showErrorDialog("Error Creating Deployment", 
+                    "Failed to create deployment: " + e.getMessage());
+            }
+        });
+    }
+    
+    @FXML
+    private void editDeployment() {
+        Deployment selected = deploymentsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            UIUtils.showWarningDialog("No Selection", "Please select a deployment to edit.");
+            return;
+        }
+        
+        Optional<Deployment> result = DialogUtils.showDeploymentDialog(selected, currentUser);
+        
+        result.ifPresent(deployment -> {
+            try {
+                Deployment updated = deploymentService.updateDeployment(
+                    deployment.getId(),
+                    deployment.getReleaseName(),
+                    deployment.getVersion(),
+                    deployment.getDeploymentDateTime(),
+                    deployment.getDriverUser(),
+                    deployment.getReleaseNotes(),
+                    deployment.getEnvironment(),
+                    deployment.getStatus(),
+                    currentUser
+                );
+                
+                refreshData();
+                statusLabel.setText("Deployment updated successfully");
+                logger.info("Updated deployment: {}", updated.getReleaseName());
+                
+            } catch (Exception e) {
+                logger.error("Error updating deployment", e);
+                UIUtils.showErrorDialog("Error Updating Deployment", 
+                    "Failed to update deployment: " + e.getMessage());
+            }
+        });
+    }
+    
+    @FXML
+    private void deleteDeployment() {
+        Deployment selected = deploymentsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            UIUtils.showWarningDialog("No Selection", "Please select a deployment to delete.");
+            return;
+        }
+        
+        boolean confirmed = DialogUtils.showDeleteConfirmation("deployment", selected.getReleaseName());
+        
+        if (confirmed) {
+            try {
+                deploymentService.deleteDeployment(selected.getId());
+                refreshData();
+                statusLabel.setText("Deployment deleted (archived) successfully");
+                logger.info("Deleted deployment: {}", selected.getReleaseName());
+                
+            } catch (Exception e) {
+                logger.error("Error deleting deployment", e);
+                UIUtils.showErrorDialog("Error Deleting Deployment", 
+                    "Failed to delete deployment: " + e.getMessage());
+            }
+        }
     }
 }

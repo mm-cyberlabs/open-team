@@ -6,6 +6,8 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
@@ -23,11 +25,11 @@ import java.util.ResourceBundle;
 public class MainController implements Initializable {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
     
-    @FXML private VBox navigationMenu;
     @FXML private StackPane contentArea;
-    @FXML private Button announcementsButton;
-    @FXML private Button activitiesButton;
-    @FXML private Button deploymentsButton;
+    @FXML private TabPane mainTabPane;
+    @FXML private Tab announcementsTab;
+    @FXML private Tab activitiesTab;
+    @FXML private Tab deploymentsTab;
     @FXML private Label lastUpdateLabel;
     
     private AnnouncementController announcementController;
@@ -38,18 +40,24 @@ public class MainController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         logger.info("Initializing main controller");
         
-        setupNavigationButtons();
+        setupTabNavigation();
         loadDefaultView();
         updateLastUpdateTime();
     }
     
     /**
-     * Sets up navigation button event handlers.
+     * Sets up tab navigation event handlers.
      */
-    private void setupNavigationButtons() {
-        announcementsButton.setOnAction(event -> showAnnouncementsView());
-        activitiesButton.setOnAction(event -> showActivitiesView());
-        deploymentsButton.setOnAction(event -> showDeploymentsView());
+    private void setupTabNavigation() {
+        mainTabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
+            if (newTab == announcementsTab) {
+                showAnnouncementsView();
+            } else if (newTab == activitiesTab) {
+                showActivitiesView();
+            } else if (newTab == deploymentsTab) {
+                showDeploymentsView();
+            }
+        });
     }
     
     /**
@@ -78,7 +86,7 @@ public class MainController implements Initializable {
                 announcementController.refreshData();
             }
             
-            setActiveNavigationButton(announcementsButton);
+            mainTabPane.getSelectionModel().select(announcementsTab);
             updateLastUpdateTime();
             
         } catch (IOException e) {
@@ -107,7 +115,7 @@ public class MainController implements Initializable {
                 activityController.refreshData();
             }
             
-            setActiveNavigationButton(activitiesButton);
+            mainTabPane.getSelectionModel().select(activitiesTab);
             updateLastUpdateTime();
             
         } catch (IOException e) {
@@ -136,7 +144,7 @@ public class MainController implements Initializable {
                 deploymentController.refreshData();
             }
             
-            setActiveNavigationButton(deploymentsButton);
+            mainTabPane.getSelectionModel().select(deploymentsTab);
             updateLastUpdateTime();
             
         } catch (IOException e) {
@@ -146,20 +154,6 @@ public class MainController implements Initializable {
         }
     }
     
-    /**
-     * Sets the active navigation button style.
-     * 
-     * @param activeButton Button to mark as active
-     */
-    private void setActiveNavigationButton(Button activeButton) {
-        // Remove active class from all buttons
-        announcementsButton.getStyleClass().removeAll("nav-button-active");
-        activitiesButton.getStyleClass().removeAll("nav-button-active");
-        deploymentsButton.getStyleClass().removeAll("nav-button-active");
-        
-        // Add active class to the selected button
-        activeButton.getStyleClass().add("nav-button-active");
-    }
     
     /**
      * Updates the last update time label.
@@ -183,14 +177,12 @@ public class MainController implements Initializable {
             }
             
             // Determine which view is currently active and refresh it
-            if (announcementsButton.getStyleClass().contains("nav-button-active") && 
-                announcementController != null) {
+            Tab selectedTab = mainTabPane.getSelectionModel().getSelectedItem();
+            if (selectedTab == announcementsTab && announcementController != null) {
                 announcementController.refreshData();
-            } else if (activitiesButton.getStyleClass().contains("nav-button-active") && 
-                       activityController != null) {
+            } else if (selectedTab == activitiesTab && activityController != null) {
                 activityController.refreshData();
-            } else if (deploymentsButton.getStyleClass().contains("nav-button-active") && 
-                       deploymentController != null) {
+            } else if (selectedTab == deploymentsTab && deploymentController != null) {
                 deploymentController.refreshData();
             }
             
