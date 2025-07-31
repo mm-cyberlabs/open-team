@@ -328,7 +328,39 @@ public class DeploymentRepository {
     public List<Deployment> findNonArchived() {
         // For now, return all deployments as a simple implementation
         // This can be enhanced later to filter by is_archived = false
-        return findAll();
+
+        String sql = """
+            SELECT d.id, d.release_name, d.version, d.deployment_datetime, d.release_notes,
+                   d.environment, d.status, d.created_at, d.updated_at,
+                   du.id as driver_user_id, du.username as driver_username,
+                   du.full_name as driver_full_name, du.email as driver_email,
+                   cu.id as created_user_id, cu.username as created_username, 
+                   cu.full_name as created_full_name, cu.email as created_email,
+                   uu.id as updated_user_id, uu.username as updated_username,
+                   uu.full_name as updated_full_name, uu.email as updated_email
+            FROM team_comm.deployments d
+            LEFT JOIN team_comm.users du ON d.driver_user_id = du.id
+            LEFT JOIN team_comm.users cu ON d.created_by = cu.id
+            LEFT JOIN team_comm.users uu ON d.updated_by = uu.id
+            WHERE D.IS_ARCHIVED = FALSE
+            ORDER BY d.deployment_datetime DESC
+            """;
+
+        List<Deployment> deployments = new ArrayList<>();
+
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                deployments.add(mapResultSetToDeployment(rs));
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error finding all deployments", e);
+        }
+
+        return deployments;
     }
     
     /**

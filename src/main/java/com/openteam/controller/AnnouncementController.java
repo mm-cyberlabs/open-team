@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.ResourceBundle;
@@ -256,9 +257,12 @@ public class AnnouncementController implements Initializable {
         try {
             updateButton.setDisable(true);
             statusLabel.setText("Loading announcements...");
-            
+
             List<Announcement> announcementList = announcementService.getAllActiveAnnouncements();
             announcements.clear();
+            // Remove archived announcements if checkbox is unchecked
+            // Safe removal
+            announcementList.removeIf(announcement -> !showArchivedCheckBox.isSelected() && announcement.getIsArchived());
             announcements.addAll(announcementList);
             
             statusLabel.setText("Loaded " + announcementList.size() + " announcements");
