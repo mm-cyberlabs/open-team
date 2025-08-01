@@ -73,13 +73,37 @@ public class DeploymentService {
                                      LocalDateTime deploymentDateTime, User driverUser,
                                      String releaseNotes, Environment environment,
                                      DeploymentStatus status, User createdBy) {
+        return createDeployment(releaseName, version, deploymentDateTime, driverUser,
+                               releaseNotes, environment, status, null, null, createdBy);
+    }
+    
+    /**
+     * Creates a new deployment with ticket number and documentation URL.
+     * 
+     * @param releaseName Name of the release
+     * @param version Version number
+     * @param deploymentDateTime When the deployment is scheduled/occurred
+     * @param driverUser User responsible for the deployment
+     * @param releaseNotes Notes about the release
+     * @param environment Target environment
+     * @param status Deployment status
+     * @param ticketNumber Ticket number for tracking
+     * @param documentationUrl URL to documentation
+     * @param createdBy User creating the deployment record
+     * @return Created deployment
+     */
+    public Deployment createDeployment(String releaseName, String version, 
+                                     LocalDateTime deploymentDateTime, User driverUser,
+                                     String releaseNotes, Environment environment,
+                                     DeploymentStatus status, String ticketNumber, 
+                                     String documentationUrl, User createdBy) {
         logger.info("Creating new deployment: {} v{}", releaseName, version);
         
         validateDeploymentData(releaseName, version, deploymentDateTime, driverUser, createdBy);
         
         Deployment deployment = new Deployment(releaseName, version, deploymentDateTime,
                                              driverUser, releaseNotes, environment, 
-                                             status, createdBy);
+                                             status, ticketNumber, documentationUrl, createdBy);
         deployment.setCreatedAt(LocalDateTime.now());
         deployment.setUpdatedAt(LocalDateTime.now());
         
@@ -105,6 +129,32 @@ public class DeploymentService {
                                      LocalDateTime deploymentDateTime, User driverUser,
                                      String releaseNotes, Environment environment,
                                      DeploymentStatus status, User updatedBy) {
+        return updateDeployment(id, releaseName, version, deploymentDateTime, driverUser,
+                               releaseNotes, environment, status, null, null, updatedBy);
+    }
+    
+    /**
+     * Updates an existing deployment with ticket number and documentation URL.
+     * 
+     * @param id Deployment ID
+     * @param releaseName New release name
+     * @param version New version
+     * @param deploymentDateTime New deployment date/time
+     * @param driverUser New driver user
+     * @param releaseNotes New release notes
+     * @param environment New environment
+     * @param status New status
+     * @param ticketNumber New ticket number
+     * @param documentationUrl New documentation URL
+     * @param updatedBy User updating the deployment
+     * @return Updated deployment
+     * @throws IllegalArgumentException if deployment not found
+     */
+    public Deployment updateDeployment(Long id, String releaseName, String version,
+                                     LocalDateTime deploymentDateTime, User driverUser,
+                                     String releaseNotes, Environment environment,
+                                     DeploymentStatus status, String ticketNumber,
+                                     String documentationUrl, User updatedBy) {
         logger.info("Updating deployment with ID: {}", id);
         
         validateDeploymentData(releaseName, version, deploymentDateTime, driverUser, updatedBy);
@@ -120,10 +170,18 @@ public class DeploymentService {
         existing.setDeploymentDateTime(deploymentDateTime);
         existing.setDriverUser(driverUser);
         existing.setReleaseNotes(releaseNotes);
+        existing.setTicketNumber(ticketNumber);
+        existing.setDocumentationUrl(documentationUrl);
         existing.setEnvironment(environment);
         existing.setStatus(status);
         existing.setUpdatedBy(updatedBy);
         existing.setUpdatedAt(LocalDateTime.now());
+        
+        // Auto-archive deployment when status is changed to COMPLETED
+        if (status == DeploymentStatus.COMPLETED && !Boolean.TRUE.equals(existing.getIsArchived())) {
+            logger.info("Auto-archiving deployment {} as it was marked as COMPLETED", id);
+            existing.setIsArchived(true);
+        }
         
         return deploymentRepository.save(existing);
     }
@@ -149,6 +207,12 @@ public class DeploymentService {
         existing.setStatus(status);
         existing.setUpdatedBy(updatedBy);
         existing.setUpdatedAt(LocalDateTime.now());
+        
+        // Auto-archive deployment when status is changed to COMPLETED
+        if (status == DeploymentStatus.COMPLETED && !Boolean.TRUE.equals(existing.getIsArchived())) {
+            logger.info("Auto-archiving deployment {} as it was marked as COMPLETED", id);
+            existing.setIsArchived(true);
+        }
         
         return deploymentRepository.save(existing);
     }
@@ -265,5 +329,102 @@ public class DeploymentService {
         }
         
         deploymentRepository.deleteById(id);
+    }
+    
+    /**
+     * Searches deployments by release name, version, or release notes using local fuzzy search.
+     * 
+     * @param searchTerm Search term
+     * @param includeArchived Whether to include archived deployments
+     * @return List of matching deployments sorted by deployment date DESC
+     */
+    public List<Deployment> searchDeployments(String searchTerm, boolean includeArchived) {
+        logger.debug("Searching deployments with term: {}, includeArchived: {}", searchTerm, includeArchived);
+        
+        // Get all deployments first (from memory/cache)
+        List<Deployment> allDeployments = includeArchived ? getAllDeployments() : getNonArchivedDeployments();
+        
+        // If no search term, return all deployments
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return allDeployments;
+        }
+        
+        // Perform local fuzzy search
+        String searchTermLower = searchTerm.trim().toLowerCase();
+        
+        return allDeployments.stream()
+                .filter(deployment -> fuzzyMatch(deployment, searchTermLower))
+                .sorted((d1, d2) -> d2.getDeploymentDateTime().compareTo(d1.getDeploymentDateTime()))
+                .toList();
+    }
+    
+    /**
+     * Performs fuzzy matching on a deployment against a search term.
+     * Searches in release name, version, and release notes.
+     * 
+     * @param deployment Deployment to check
+     * @param searchTermLower Search term in lowercase
+     * @return true if deployment matches search term
+     */
+    private boolean fuzzyMatch(Deployment deployment, String searchTermLower) {
+        // Check release name
+        if (deployment.getReleaseName() != null && 
+            deployment.getReleaseName().toLowerCase().contains(searchTermLower)) {
+            return true;
+        }
+        
+        // Check version
+        if (deployment.getVersion() != null && 
+            deployment.getVersion().toLowerCase().contains(searchTermLower)) {
+            return true;
+        }
+        
+        // Check release notes
+        if (deployment.getReleaseNotes() != null && 
+            deployment.getReleaseNotes().toLowerCase().contains(searchTermLower)) {
+            return true;
+        }
+        
+        // Check environment display name
+        if (deployment.getEnvironment() != null && 
+            deployment.getEnvironment().getDisplayName().toLowerCase().contains(searchTermLower)) {
+            return true;
+        }
+        
+        // Check status display name
+        if (deployment.getStatus() != null && 
+            deployment.getStatus().getDisplayName().toLowerCase().contains(searchTermLower)) {
+            return true;
+        }
+        
+        // Check driver user name
+        if (deployment.getDriverUser() != null && deployment.getDriverUser().getFullName() != null &&
+            deployment.getDriverUser().getFullName().toLowerCase().contains(searchTermLower)) {
+            return true;
+        }
+        
+        // Check ticket number
+        if (deployment.getTicketNumber() != null && 
+            deployment.getTicketNumber().toLowerCase().contains(searchTermLower)) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Unarchives a deployment.
+     * 
+     * @param id Deployment ID to unarchive
+     */
+    public void unarchiveDeployment(Long id) {
+        logger.info("Unarchiving deployment with ID: {}", id);
+        
+        Optional<Deployment> existingOpt = deploymentRepository.findById(id);
+        if (existingOpt.isEmpty()) {
+            throw new IllegalArgumentException("Deployment not found with ID: " + id);
+        }
+        
+        deploymentRepository.unarchiveById(id);
     }
 }

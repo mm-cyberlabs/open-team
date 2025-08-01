@@ -29,37 +29,49 @@ INSERT INTO announcements (title, content, priority, created_by, updated_by) VAL
  'Please update your emergency contact information in the HR system. This is required for all employees and must be completed by the end of this month.',
  'URGENT', 1, 1);
 
--- Insert sample activities
-INSERT INTO activities (title, description, activity_type, scheduled_date, location, created_by, updated_by) VALUES
-('Sprint Planning Meeting', 
- 'Planning session for the next development sprint. We will review backlog items, estimate story points, and plan the sprint goals.',
- 'MEETING', 
- CURRENT_TIMESTAMP + INTERVAL '1 day', 
- 'Conference Room A', 2, 2),
-
-('Security Awareness Training', 
- 'Mandatory security awareness training for all development team members. This session will cover best practices for secure coding and data handling.',
- 'TRAINING', 
- CURRENT_TIMESTAMP + INTERVAL '3 days', 
- 'Training Room B', 1, 1),
-
-('Team Building Event', 
- 'Annual team building event with activities and lunch. Attendance is optional but highly encouraged.',
- 'EVENT', 
+-- Insert sample target dates
+INSERT INTO target_dates (project_name, task_name, target_date, driver_user_id, documentation_url, status, created_by, updated_by) VALUES
+('Customer Portal Redesign', 
+ 'Complete UI/UX mockups and user testing',
  CURRENT_TIMESTAMP + INTERVAL '7 days', 
- 'Central Park Pavilion', 3, 3),
+ 2, 
+ 'https://wiki.company.com/projects/portal-redesign',
+ 'IN_PROGRESS', 2, 2),
 
-('Architecture Review', 
- 'Monthly architecture review meeting to discuss system design decisions and technical debt.',
- 'MEETING', 
+('Security Compliance Initiative', 
+ 'Implement multi-factor authentication',
  CURRENT_TIMESTAMP + INTERVAL '14 days', 
- 'Virtual Meeting Room', 4, 4),
+ 3, 
+ 'https://docs.company.com/security/mfa-implementation',
+ 'PENDING', 1, 1),
 
-('Code Review Workshop', 
- 'Workshop on effective code review practices and tools. Open to all developers.',
- 'TRAINING', 
+('Data Migration Project', 
+ 'Complete legacy system data migration',
  CURRENT_TIMESTAMP + INTERVAL '21 days', 
- 'Lab 1', 5, 5);
+ 4, 
+ 'https://confluence.company.com/data-migration',
+ 'PENDING', 3, 3),
+
+('Mobile App v2.0', 
+ 'Beta release for internal testing',
+ CURRENT_TIMESTAMP + INTERVAL '10 days', 
+ 5, 
+ 'https://github.com/company/mobile-app/milestone/5',
+ 'IN_PROGRESS', 4, 4),
+
+('API Documentation Update', 
+ 'Complete API documentation overhaul',
+ CURRENT_TIMESTAMP - INTERVAL '2 days', 
+ 2, 
+ 'https://api-docs.company.com/v3',
+ 'COMPLETED', 5, 5),
+
+('Performance Optimization', 
+ 'Database query optimization phase 1',
+ CURRENT_TIMESTAMP + INTERVAL '28 days', 
+ 3, 
+ 'https://wiki.company.com/performance/db-optimization',
+ 'PENDING', 2, 2);
 
 -- Insert sample deployments
 INSERT INTO deployments (release_name, version, deployment_datetime, driver_user_id, release_notes, environment, status, created_by, updated_by) VALUES

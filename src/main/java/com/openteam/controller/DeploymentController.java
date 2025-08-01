@@ -35,17 +35,19 @@ public class DeploymentController implements Initializable {
     @FXML private TableView<Deployment> deploymentsTable;
     @FXML private TableColumn<Deployment, String> releaseNameColumn;
     @FXML private TableColumn<Deployment, String> versionColumn;
+    @FXML private TableColumn<Deployment, String> ticketNumberColumn;
     @FXML private TableColumn<Deployment, String> environmentColumn;
     @FXML private TableColumn<Deployment, String> statusColumn;
     @FXML private TableColumn<Deployment, String> deploymentDateColumn;
     @FXML private TableColumn<Deployment, String> driverColumn;
+    @FXML private TableColumn<Deployment, String> documentationColumn;
     @FXML private TableColumn<Deployment, String> archivedColumn;
-    @FXML private Button updateButton;
     @FXML private Label statusLabel;
     @FXML private TextArea releaseNotesTextArea;
     @FXML private ComboBox<Environment> environmentFilter;
     @FXML private ComboBox<DeploymentStatus> statusFilter;
     @FXML private CheckBox showArchivedCheckBox;
+    @FXML private TextField searchField;
     @FXML private SplitPane mainSplitPane;
     
     private final DeploymentService deploymentService;
@@ -75,12 +77,18 @@ public class DeploymentController implements Initializable {
         setupFilters();
         setupEventHandlers();
         setupRightPanelToggle();
+        setupSearch();
         loadDeployments();
     }
     
     private void setupTable() {
         releaseNameColumn.setCellValueFactory(new PropertyValueFactory<>("releaseName"));
         versionColumn.setCellValueFactory(new PropertyValueFactory<>("version"));
+        ticketNumberColumn.setCellValueFactory(cellData -> 
+            new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getTicketNumber() != null ? cellData.getValue().getTicketNumber() : ""
+            )
+        );
         environmentColumn.setCellValueFactory(cellData -> 
             new javafx.beans.property.SimpleStringProperty(
                 cellData.getValue().getEnvironment().getDisplayName()
@@ -99,6 +107,12 @@ public class DeploymentController implements Initializable {
         driverColumn.setCellValueFactory(cellData -> 
             new javafx.beans.property.SimpleStringProperty(
                 cellData.getValue().getDriverUser().getFullName()
+            )
+        );
+        
+        documentationColumn.setCellValueFactory(cellData -> 
+            new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getDocumentationUrl() != null && !cellData.getValue().getDocumentationUrl().isEmpty() ? "View Docs" : ""
             )
         );
         
@@ -139,6 +153,35 @@ public class DeploymentController implements Initializable {
                     Deployment deployment = getTableView().getItems().get(getIndex());
                     Environment environment = deployment.getEnvironment();
                     setStyle("-fx-text-fill: " + environment.getColorCode() + ";");
+                }
+            }
+        });
+        
+        // Documentation column with clickable link
+        documentationColumn.setCellFactory(column -> new TableCell<Deployment, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                
+                if (empty || item == null || item.isEmpty()) {
+                    setText(null);
+                    setStyle("");
+                    setOnMouseClicked(null);
+                    setCursor(null);
+                } else {
+                    setText(item);
+                    Deployment deployment = getTableView().getItems().get(getIndex());
+                    String url = deployment.getDocumentationUrl();
+                    
+                    if (url != null && !url.isEmpty()) {
+                        setStyle("-fx-text-fill: #00ff85; -fx-underline: true;");
+                        setCursor(javafx.scene.Cursor.HAND);
+                        setOnMouseClicked(event -> openUrl(url));
+                    } else {
+                        setStyle("");
+                        setOnMouseClicked(null);
+                        setCursor(null);
+                    }
                 }
             }
         });
@@ -224,11 +267,9 @@ public class DeploymentController implements Initializable {
     }
     
     private void setupEventHandlers() {
-        updateButton.setOnAction(event -> refreshData());
-        
         // Archive filter checkbox
         showArchivedCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
-            filterByArchiveStatus();
+            performSearch();
         });
     }
     
@@ -265,63 +306,91 @@ public class DeploymentController implements Initializable {
         // When divider is at 0.65 (right panel visible), table gets 65% width
         
         double tableWidthFactor = dividerPosition;
-        double baseWidth = 800; // Assume base container width of 800px
+        double baseWidth = 1000; // Increased base width to accommodate new columns
         double availableTableWidth = baseWidth * tableWidthFactor;
         
         // Adjust column widths proportionally
-        if (availableTableWidth > 600) {
+        if (availableTableWidth > 800) {
             // Full width - expand columns
-            releaseNameColumn.setPrefWidth(200);
-            versionColumn.setPrefWidth(100);
-            environmentColumn.setPrefWidth(120);
-            statusColumn.setPrefWidth(120);
-            deploymentDateColumn.setPrefWidth(150);
-            driverColumn.setPrefWidth(140);
-            archivedColumn.setPrefWidth(90);
-        } else {
-            // Compressed width - shrink columns
             releaseNameColumn.setPrefWidth(150);
             versionColumn.setPrefWidth(80);
-            environmentColumn.setPrefWidth(90);
-            statusColumn.setPrefWidth(90);
+            ticketNumberColumn.setPrefWidth(100);
+            environmentColumn.setPrefWidth(100);
+            statusColumn.setPrefWidth(100);
             deploymentDateColumn.setPrefWidth(130);
             driverColumn.setPrefWidth(120);
+            documentationColumn.setPrefWidth(120);
             archivedColumn.setPrefWidth(80);
+        } else {
+            // Compressed width - shrink columns
+            releaseNameColumn.setPrefWidth(120);
+            versionColumn.setPrefWidth(70);
+            ticketNumberColumn.setPrefWidth(80);
+            environmentColumn.setPrefWidth(80);
+            statusColumn.setPrefWidth(80);
+            deploymentDateColumn.setPrefWidth(110);
+            driverColumn.setPrefWidth(100);
+            documentationColumn.setPrefWidth(100);
+            archivedColumn.setPrefWidth(70);
         }
         
         // Force table to refresh layout
         deploymentsTable.refresh();
     }
     
-    private void loadDeployments() {
+    private void openUrl(String url) {
         try {
-            updateButton.setDisable(true);
-            statusLabel.setText("Loading deployments...");
-            
-            List<Deployment> deploymentList;
-            if (showArchivedCheckBox.isSelected()) {
-                deploymentList = deploymentService.getAllDeployments();
+            java.awt.Desktop desktop = java.awt.Desktop.getDesktop();
+            if (desktop.isSupported(java.awt.Desktop.Action.BROWSE)) {
+                java.net.URI uri = new java.net.URI(url);
+                desktop.browse(uri);
+                logger.info("Opened documentation URL: {}", url);
             } else {
-                deploymentList = deploymentService.getNonArchivedDeployments();
+                logger.warn("Desktop browsing not supported");
+                UIUtils.showWarningDialog("Browser Not Supported", "Cannot open URL: " + url);
             }
+        } catch (Exception e) {
+            logger.error("Error opening URL: " + url, e);
+            UIUtils.showErrorDialog("Error Opening URL", "Failed to open documentation: " + e.getMessage());
+        }
+    }
+    
+    private void loadDeployments() {
+        performSearch();
+    }
+    
+    private void setupSearch() {
+        // Setup search field with real-time search
+        searchField.textProperty().addListener((obs, oldText, newText) -> {
+            performSearch();
+        });
+    }
+    
+    private void performSearch() {
+        try {
+            statusLabel.setText("Searching deployments...");
+            
+            String searchTerm = searchField.getText();
+            boolean includeArchived = showArchivedCheckBox.isSelected();
+            
+            List<Deployment> deploymentList = deploymentService.searchDeployments(searchTerm, includeArchived);
             
             deployments.clear();
             deployments.addAll(deploymentList);
             
-            statusLabel.setText("Loaded " + deploymentList.size() + " deployments");
-            logger.info("Loaded {} deployments", deploymentList.size());
+            String searchInfo = searchTerm != null && !searchTerm.trim().isEmpty() ? 
+                " matching '" + searchTerm + "'" : "";
+            String archiveInfo = includeArchived ? " (including archived)" : "";
+            
+            statusLabel.setText("Found " + deploymentList.size() + " deployments" + searchInfo + archiveInfo);
+            logger.info("Found {} deployments with search term: '{}', includeArchived: {}", 
+                       deploymentList.size(), searchTerm, includeArchived);
             
         } catch (Exception e) {
-            logger.error("Error loading deployments", e);
-            statusLabel.setText("Error loading deployments");
+            logger.error("Error searching deployments", e);
+            statusLabel.setText("Error searching deployments");
             UIUtils.showDatabaseErrorDialog(e);
-        } finally {
-            updateButton.setDisable(false);
         }
-    }
-    
-    private void filterByArchiveStatus() {
-        loadDeployments();
     }
     
     public void refreshData() {
@@ -371,6 +440,17 @@ public class DeploymentController implements Initializable {
             notes.append("Status: ").append(deployment.getStatus().getDisplayName()).append("\n");
             notes.append("Deployment Date: ").append(DateTimeUtil.formatForDisplay(deployment.getDeploymentDateTime())).append("\n");
             notes.append("Driver: ").append(deployment.getDriverUser().getFullName()).append("\n");
+            
+            // Add ticket number if available
+            if (deployment.getTicketNumber() != null && !deployment.getTicketNumber().trim().isEmpty()) {
+                notes.append("Ticket Number: ").append(deployment.getTicketNumber()).append("\n");
+            }
+            
+            // Add documentation link if available
+            if (deployment.getDocumentationUrl() != null && !deployment.getDocumentationUrl().trim().isEmpty()) {
+                notes.append("Documentation: ").append(deployment.getDocumentationUrl()).append("\n");
+            }
+            
             notes.append("Created by: ").append(deployment.getCreatedBy().getFullName()).append("\n");
             notes.append("Created: ").append(DateTimeUtil.formatForDisplay(deployment.getCreatedAt())).append("\n");
             
@@ -393,54 +473,35 @@ public class DeploymentController implements Initializable {
     }
     
     @FXML
-    private void showProduction() {
-        try {
-            List<Deployment> production = deploymentService.getProductionDeployments();
-            deployments.clear();
-            deployments.addAll(production);
-            statusLabel.setText("Showing " + production.size() + " production deployments");
-            environmentFilter.getSelectionModel().clearSelection();
-            statusFilter.getSelectionModel().clearSelection();
-        } catch (Exception e) {
-            logger.error("Error loading production deployments", e);
-            UIUtils.showDatabaseErrorDialog(e);
-        }
-    }
-    
-    @FXML
-    private void showRecent() {
-        try {
-            List<Deployment> recent = deploymentService.getRecentDeployments();
-            deployments.clear();
-            deployments.addAll(recent);
-            statusLabel.setText("Showing " + recent.size() + " recent deployments (last 30 days)");
-            environmentFilter.getSelectionModel().clearSelection();
-            statusFilter.getSelectionModel().clearSelection();
-        } catch (Exception e) {
-            logger.error("Error loading recent deployments", e);
-            UIUtils.showDatabaseErrorDialog(e);
-        }
-    }
-    
-    @FXML
-    private void showActive() {
-        try {
-            List<Deployment> active = deploymentService.getActiveDeployments();
-            deployments.clear();
-            deployments.addAll(active);
-            statusLabel.setText("Showing " + active.size() + " active deployments");
-            environmentFilter.getSelectionModel().clearSelection();
-            statusFilter.getSelectionModel().clearSelection();
-        } catch (Exception e) {
-            logger.error("Error loading active deployments", e);
-            UIUtils.showDatabaseErrorDialog(e);
-        }
-    }
-    
-    @FXML
     private void clearSelection() {
         deploymentsTable.getSelectionModel().clearSelection();
         hideRightPanel();
+    }
+    
+    @FXML
+    private void unarchiveDeployment() {
+        Deployment selected = deploymentsTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            UIUtils.showWarningDialog("No Selection", "Please select a deployment to unarchive.");
+            return;
+        }
+        
+        if (!selected.getIsArchived()) {
+            UIUtils.showWarningDialog("Not Archived", "Selected deployment is not archived.");
+            return;
+        }
+        
+        try {
+            deploymentService.unarchiveDeployment(selected.getId());
+            performSearch(); // Refresh the list
+            statusLabel.setText("Deployment unarchived successfully");
+            logger.info("Unarchived deployment: {}", selected.getReleaseName());
+            
+        } catch (Exception e) {
+            logger.error("Error unarchiving deployment", e);
+            UIUtils.showErrorDialog("Error Unarchiving Deployment", 
+                "Failed to unarchive deployment: " + e.getMessage());
+        }
     }
     
     @FXML
@@ -457,6 +518,8 @@ public class DeploymentController implements Initializable {
                     deployment.getReleaseNotes(),
                     deployment.getEnvironment(),
                     deployment.getStatus(),
+                    deployment.getTicketNumber(),
+                    deployment.getDocumentationUrl(),
                     currentUser
                 );
                 
@@ -493,6 +556,8 @@ public class DeploymentController implements Initializable {
                     deployment.getReleaseNotes(),
                     deployment.getEnvironment(),
                     deployment.getStatus(),
+                    deployment.getTicketNumber(),
+                    deployment.getDocumentationUrl(),
                     currentUser
                 );
                 

@@ -162,13 +162,77 @@ public class UIUtils {
         try {
             var iconStream = UIUtils.class.getResourceAsStream(iconPath);
             if (iconStream != null) {
-                javafx.scene.image.Image icon = new javafx.scene.image.Image(iconStream);
-                stage.getIcons().add(icon);
+                // Add multiple sizes for better platform compatibility
+                javafx.scene.image.Image icon16 = new javafx.scene.image.Image(iconStream, 16, 16, true, true);
+                iconStream = UIUtils.class.getResourceAsStream(iconPath); // Reset stream
+                javafx.scene.image.Image icon32 = new javafx.scene.image.Image(iconStream, 32, 32, true, true);
+                iconStream = UIUtils.class.getResourceAsStream(iconPath); // Reset stream
+                javafx.scene.image.Image icon64 = new javafx.scene.image.Image(iconStream, 64, 64, true, true);
+                iconStream = UIUtils.class.getResourceAsStream(iconPath); // Reset stream
+                javafx.scene.image.Image icon128 = new javafx.scene.image.Image(iconStream, 128, 128, true, true);
+                iconStream = UIUtils.class.getResourceAsStream(iconPath); // Reset stream
+                javafx.scene.image.Image iconOriginal = new javafx.scene.image.Image(iconStream);
+                
+                stage.getIcons().addAll(icon16, icon32, icon64, icon128, iconOriginal);
+                
+                // For macOS, also try to set the dock icon using AWT
+                setMacOSDockIcon(iconPath);
             } else {
                 logger.warn("Could not load application icon from: {}", iconPath);
             }
         } catch (Exception e) {
             logger.error("Error setting application icon", e);
+        }
+    }
+    
+    /**
+     * Sets the macOS dock icon using AWT.
+     * 
+     * @param iconPath Path to the icon resource
+     */
+    private static void setMacOSDockIcon(String iconPath) {
+        try {
+            // Check if we're on macOS
+            String osName = System.getProperty("os.name").toLowerCase();
+            if (!osName.contains("mac")) {
+                return;
+            }
+            
+            // Load the icon using AWT
+            var iconStream = UIUtils.class.getResourceAsStream(iconPath);
+            if (iconStream != null) {
+                java.awt.image.BufferedImage awtIcon = javax.imageio.ImageIO.read(iconStream);
+                
+                // Use reflection to access macOS-specific APIs safely
+                Class<?> applicationClass = Class.forName("java.awt.Desktop");
+                Object desktopInstance = applicationClass.getMethod("getDesktop").invoke(null);
+                
+                // Try the newer API first (macOS 10.14+)
+                try {
+                    Class<?> taskbarClass = Class.forName("java.awt.Taskbar");
+                    if (taskbarClass.getMethod("isTaskbarSupported").invoke(null, (Object[]) null).equals(true)) {
+                        Object taskbar = taskbarClass.getMethod("getTaskbar").invoke(null);
+                        taskbarClass.getMethod("setIconImage", java.awt.Image.class).invoke(taskbar, awtIcon);
+                        logger.info("Set macOS dock icon using Taskbar API");
+                        return;
+                    }
+                } catch (Exception taskbarEx) {
+                    logger.debug("Taskbar API not available, trying older method", taskbarEx);
+                }
+                
+                // Fallback to older API
+                try {
+                    Class<?> appClass = Class.forName("com.apple.eawt.Application");
+                    Object app = appClass.getMethod("getApplication").invoke(null);
+                    appClass.getMethod("setDockIconImage", java.awt.Image.class).invoke(app, awtIcon);
+                    logger.info("Set macOS dock icon using Application API");
+                } catch (Exception appEx) {
+                    logger.debug("Apple Application API not available", appEx);
+                }
+                
+            }
+        } catch (Exception e) {
+            logger.debug("Could not set macOS dock icon: {}", e.getMessage());
         }
     }
     

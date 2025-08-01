@@ -18,6 +18,28 @@ public class DatabaseMigrationUtil {
     private static final DatabaseConnection dbConnection = DatabaseConnection.getInstance();
     
     /**
+     * Ensures all required columns exist in all tables.
+     * This is a safe operation that adds columns only if they don't exist.
+     */
+    public static void ensureColumnsExist() {
+        logger.info("Checking and adding required columns if needed...");
+        
+        try {
+            // Archive columns
+            addArchiveColumnIfNotExists("announcements");
+            addArchiveColumnIfNotExists("activities");
+            addArchiveColumnIfNotExists("deployments");
+            
+            // Deployment specific columns
+            addDeploymentColumnsIfNotExists();
+            
+            logger.info("Columns migration completed successfully");
+        } catch (Exception e) {
+            logger.error("Error during columns migration", e);
+        }
+    }
+    
+    /**
      * Ensures the is_archived column exists in all tables.
      * This is a safe operation that adds the column only if it doesn't exist.
      */
@@ -32,6 +54,46 @@ public class DatabaseMigrationUtil {
             logger.info("Archive columns migration completed successfully");
         } catch (Exception e) {
             logger.error("Error during archive columns migration", e);
+        }
+    }
+    
+    /**
+     * Adds ticket_number and documentation_url columns to deployments table if they don't exist.
+     */
+    private static void addDeploymentColumnsIfNotExists() {
+        try (Connection conn = dbConnection.getConnection()) {
+            // Add ticket_number column
+            if (!columnExists(conn, "deployments", "ticket_number")) {
+                logger.info("Adding ticket_number column to deployments table");
+                
+                String sql = "ALTER TABLE team_comm.deployments " + 
+                           "ADD COLUMN ticket_number VARCHAR(50)";
+                
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.executeUpdate();
+                    logger.info("Successfully added ticket_number column to deployments");
+                }
+            } else {
+                logger.debug("Column ticket_number already exists in deployments table");
+            }
+            
+            // Add documentation_url column
+            if (!columnExists(conn, "deployments", "documentation_url")) {
+                logger.info("Adding documentation_url column to deployments table");
+                
+                String sql = "ALTER TABLE team_comm.deployments " + 
+                           "ADD COLUMN documentation_url VARCHAR(500)";
+                
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.executeUpdate();
+                    logger.info("Successfully added documentation_url column to deployments");
+                }
+            } else {
+                logger.debug("Column documentation_url already exists in deployments table");
+            }
+            
+        } catch (SQLException e) {
+            logger.error("Error adding deployment columns", e);
         }
     }
     

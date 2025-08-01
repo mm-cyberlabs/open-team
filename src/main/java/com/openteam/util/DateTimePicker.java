@@ -30,6 +30,9 @@ public class DateTimePicker extends VBox {
         datePicker.setValue(LocalDate.now());
         datePicker.setPrefWidth(200);
         
+        // Apply dark theme styling programmatically
+        setupDatePickerStyling();
+        
         // Hour spinner (0-23)
         hourSpinner = new Spinner<>(0, 23, LocalTime.now().getHour());
         hourSpinner.setEditable(true);
@@ -111,6 +114,91 @@ public class DateTimePicker extends VBox {
      */
     public Spinner<Integer> getMinuteSpinner() {
         return minuteSpinner;
+    }
+    
+    /**
+     * Sets up DatePicker popup styling to match dark theme.
+     */
+    private void setupDatePickerStyling() {
+        // Listen for when the popup is shown and apply styling
+        datePicker.setOnShowing(event -> {
+            try {
+                // Use Platform.runLater to ensure popup is fully loaded
+                javafx.application.Platform.runLater(() -> {
+                    try {
+                        // Try to find and style the popup
+                        var popup = findDatePickerPopup();
+                        if (popup != null) {
+                            applyPopupStyling(popup);
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Could not apply DatePicker popup styling: " + e.getMessage());
+                    }
+                });
+            } catch (Exception e) {
+                System.err.println("Error setting up DatePicker popup styling: " + e.getMessage());
+            }
+        });
+    }
+    
+    /**
+     * Finds the DatePicker popup window.
+     */
+    private javafx.stage.PopupWindow findDatePickerPopup() {
+        try {
+            // Get all popup windows
+            var windows = javafx.stage.Window.getWindows();
+            for (var window : windows) {
+                if (window instanceof javafx.stage.PopupWindow) {
+                    var popup = (javafx.stage.PopupWindow) window;
+                    if (popup.isShowing()) {
+                        return popup;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error finding DatePicker popup: " + e.getMessage());
+        }
+        return null;
+    }
+    
+    /**
+     * Applies dark theme styling to the popup.
+     */
+    private void applyPopupStyling(javafx.stage.PopupWindow popup) {
+        try {
+            if (popup.getScene() != null && popup.getScene().getRoot() != null) {
+                var root = popup.getScene().getRoot();
+                
+                // Apply dark theme styles
+                root.setStyle("-fx-background-color: #2d2d2d; -fx-text-fill: #ffffff;");
+                
+                // Apply styling to all children recursively
+                styleNodeRecursively(root);
+            }
+        } catch (Exception e) {
+            System.err.println("Error applying popup styling: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Recursively applies dark theme styling to all nodes.
+     */
+    private void styleNodeRecursively(javafx.scene.Node node) {
+        try {
+            // Apply basic dark theme styling
+            node.setStyle("-fx-background-color: #2d2d2d; -fx-text-fill: #ffffff;");
+            
+            // If it's a Parent, style all children
+            if (node instanceof javafx.scene.Parent) {
+                var parent = (javafx.scene.Parent) node;
+                for (var child : parent.getChildrenUnmodifiable()) {
+                    styleNodeRecursively(child);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error styling node recursively: " + e.getMessage());
+        }
     }
     
     /**

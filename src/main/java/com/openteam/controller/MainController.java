@@ -28,12 +28,12 @@ public class MainController implements Initializable {
     @FXML private StackPane contentArea;
     @FXML private TabPane mainTabPane;
     @FXML private Tab announcementsTab;
-    @FXML private Tab activitiesTab;
+    @FXML private Tab targetDatesTab;
     @FXML private Tab deploymentsTab;
     @FXML private Label lastUpdateLabel;
     
     private AnnouncementController announcementController;
-    private ActivityController activityController;
+    private TargetDateController targetDateController;
     private DeploymentController deploymentController;
     
     @Override
@@ -52,8 +52,8 @@ public class MainController implements Initializable {
         mainTabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
             if (newTab == announcementsTab) {
                 showAnnouncementsView();
-            } else if (newTab == activitiesTab) {
-                showActivitiesView();
+            } else if (newTab == targetDatesTab) {
+                showTargetDatesView();
             } else if (newTab == deploymentsTab) {
                 showDeploymentsView();
             }
@@ -97,30 +97,30 @@ public class MainController implements Initializable {
     }
     
     /**
-     * Shows the activities view.
+     * Shows the target dates view.
      */
     @FXML
-    private void showActivitiesView() {
-        logger.debug("Switching to activities view");
+    private void showTargetDatesView() {
+        logger.debug("Switching to target dates view");
         
         try {
-            if (activityController == null) {
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/activity-view.fxml"));
+            if (targetDateController == null) {
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/target-date-view.fxml"));
                 contentArea.getChildren().clear();
                 contentArea.getChildren().add(loader.load());
-                activityController = loader.getController();
+                targetDateController = loader.getController();
             } else {
                 contentArea.getChildren().clear();
-                contentArea.getChildren().add(activityController.getView());
-                activityController.refreshData();
+                contentArea.getChildren().add(targetDateController.getView());
+                targetDateController.refreshData();
             }
             
-            mainTabPane.getSelectionModel().select(activitiesTab);
+            mainTabPane.getSelectionModel().select(targetDatesTab);
             updateLastUpdateTime();
             
         } catch (IOException e) {
-            logger.error("Error loading activities view", e);
-            UIUtils.showErrorDialog("View Error", "Failed to load activities view", 
+            logger.error("Error loading target dates view", e);
+            UIUtils.showErrorDialog("View Error", "Failed to load target dates view", 
                                   "Error: " + e.getMessage());
         }
     }
@@ -180,8 +180,8 @@ public class MainController implements Initializable {
             Tab selectedTab = mainTabPane.getSelectionModel().getSelectedItem();
             if (selectedTab == announcementsTab && announcementController != null) {
                 announcementController.refreshData();
-            } else if (selectedTab == activitiesTab && activityController != null) {
-                activityController.refreshData();
+            } else if (selectedTab == targetDatesTab && targetDateController != null) {
+                targetDateController.refreshData();
             } else if (selectedTab == deploymentsTab && deploymentController != null) {
                 deploymentController.refreshData();
             }
@@ -206,7 +206,7 @@ public class MainController implements Initializable {
             "A JavaFX desktop application for team communication and deployment tracking.\n\n" +
             "Features:\n" +
             "• Team announcements management\n" +
-            "• Activity scheduling and tracking\n" +
+            "• Important target dates and milestones tracking\n" +
             "• Software deployment monitoring\n" +
             "• Real-time updates with audit logging"
         );

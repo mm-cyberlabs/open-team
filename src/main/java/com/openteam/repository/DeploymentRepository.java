@@ -35,6 +35,8 @@ public class DeploymentRepository {
         String sql = """
             SELECT d.id, d.release_name, d.version, d.deployment_datetime, d.release_notes,
                    d.environment, d.status, d.created_at, d.updated_at,
+                   COALESCE(d.is_archived, false) as is_archived,
+                   d.ticket_number, d.documentation_url,
                    du.id as driver_user_id, du.username as driver_username,
                    du.full_name as driver_full_name, du.email as driver_email,
                    cu.id as created_user_id, cu.username as created_username, 
@@ -75,6 +77,8 @@ public class DeploymentRepository {
         String sql = """
             SELECT d.id, d.release_name, d.version, d.deployment_datetime, d.release_notes,
                    d.environment, d.status, d.created_at, d.updated_at,
+                   COALESCE(d.is_archived, false) as is_archived,
+                   d.ticket_number, d.documentation_url,
                    du.id as driver_user_id, du.username as driver_username,
                    du.full_name as driver_full_name, du.email as driver_email,
                    cu.id as created_user_id, cu.username as created_username, 
@@ -130,6 +134,8 @@ public class DeploymentRepository {
         String sql = """
             SELECT d.id, d.release_name, d.version, d.deployment_datetime, d.release_notes,
                    d.environment, d.status, d.created_at, d.updated_at,
+                   COALESCE(d.is_archived, false) as is_archived,
+                   d.ticket_number, d.documentation_url,
                    du.id as driver_user_id, du.username as driver_username,
                    du.full_name as driver_full_name, du.email as driver_email,
                    cu.id as created_user_id, cu.username as created_username, 
@@ -174,6 +180,8 @@ public class DeploymentRepository {
         String sql = """
             SELECT d.id, d.release_name, d.version, d.deployment_datetime, d.release_notes,
                    d.environment, d.status, d.created_at, d.updated_at,
+                   COALESCE(d.is_archived, false) as is_archived,
+                   d.ticket_number, d.documentation_url,
                    du.id as driver_user_id, du.username as driver_username,
                    du.full_name as driver_full_name, du.email as driver_email,
                    cu.id as created_user_id, cu.username as created_username, 
@@ -212,8 +220,8 @@ public class DeploymentRepository {
         String sql = """
             INSERT INTO team_comm.deployments (release_name, version, deployment_datetime,
                                              driver_user_id, release_notes, environment, 
-                                             status, created_by, updated_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                             status, ticket_number, documentation_url, created_by, updated_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
         
         try (Connection conn = dbConnection.getConnection();
@@ -226,8 +234,10 @@ public class DeploymentRepository {
             stmt.setString(5, deployment.getReleaseNotes());
             stmt.setString(6, deployment.getEnvironment().name());
             stmt.setString(7, deployment.getStatus().name());
-            stmt.setLong(8, deployment.getCreatedBy().getId());
-            stmt.setLong(9, deployment.getUpdatedBy().getId());
+            stmt.setString(8, deployment.getTicketNumber());
+            stmt.setString(9, deployment.getDocumentationUrl());
+            stmt.setLong(10, deployment.getCreatedBy().getId());
+            stmt.setLong(11, deployment.getUpdatedBy().getId());
             
             int rowsAffected = stmt.executeUpdate();
             
@@ -251,7 +261,8 @@ public class DeploymentRepository {
         String sql = """
             UPDATE team_comm.deployments 
             SET release_name = ?, version = ?, deployment_datetime = ?, driver_user_id = ?,
-                release_notes = ?, environment = ?, status = ?, updated_by = ?
+                release_notes = ?, environment = ?, status = ?, ticket_number = ?, 
+                documentation_url = ?, is_archived = ?, updated_by = ?
             WHERE id = ?
             """;
         
@@ -265,8 +276,11 @@ public class DeploymentRepository {
             stmt.setString(5, deployment.getReleaseNotes());
             stmt.setString(6, deployment.getEnvironment().name());
             stmt.setString(7, deployment.getStatus().name());
-            stmt.setLong(8, deployment.getUpdatedBy().getId());
-            stmt.setLong(9, deployment.getId());
+            stmt.setString(8, deployment.getTicketNumber());
+            stmt.setString(9, deployment.getDocumentationUrl());
+            stmt.setBoolean(10, deployment.getIsArchived() != null ? deployment.getIsArchived() : false);
+            stmt.setLong(11, deployment.getUpdatedBy().getId());
+            stmt.setLong(12, deployment.getId());
             
             int rowsAffected = stmt.executeUpdate();
             
@@ -292,6 +306,9 @@ public class DeploymentRepository {
         deployment.setStatus(DeploymentStatus.valueOf(rs.getString("status")));
         deployment.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
         deployment.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+        deployment.setIsArchived(rs.getBoolean("is_archived"));
+        deployment.setTicketNumber(rs.getString("ticket_number"));
+        deployment.setDocumentationUrl(rs.getString("documentation_url"));
         
         // Map driver user
         User driverUser = new User();
@@ -332,6 +349,8 @@ public class DeploymentRepository {
         String sql = """
             SELECT d.id, d.release_name, d.version, d.deployment_datetime, d.release_notes,
                    d.environment, d.status, d.created_at, d.updated_at,
+                   COALESCE(d.is_archived, false) as is_archived,
+                   d.ticket_number, d.documentation_url,
                    du.id as driver_user_id, du.username as driver_username,
                    du.full_name as driver_full_name, du.email as driver_email,
                    cu.id as created_user_id, cu.username as created_username, 
@@ -342,7 +361,7 @@ public class DeploymentRepository {
             LEFT JOIN team_comm.users du ON d.driver_user_id = du.id
             LEFT JOIN team_comm.users cu ON d.created_by = cu.id
             LEFT JOIN team_comm.users uu ON d.updated_by = uu.id
-            WHERE D.IS_ARCHIVED = FALSE
+            WHERE COALESCE(d.is_archived, false) = false
             ORDER BY d.deployment_datetime DESC
             """;
 
@@ -362,6 +381,7 @@ public class DeploymentRepository {
 
         return deployments;
     }
+    
     
     /**
      * Soft deletes a deployment by setting is_archived to true.
@@ -410,6 +430,30 @@ public class DeploymentRepository {
         } catch (SQLException e) {
             logger.error("Error deleting deployment with ID (fallback): " + id, e);
             throw new RuntimeException("Unable to delete deployment: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Unarchives a deployment by setting is_archived to false.
+     * 
+     * @param id Deployment ID to unarchive
+     */
+    public void unarchiveById(Long id) {
+        String sql = "UPDATE team_comm.deployments SET is_archived = false WHERE id = ?";
+        
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setLong(1, id);
+            int rowsAffected = stmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                logger.info("Deployment unarchived with ID: {}", id);
+            }
+            
+        } catch (SQLException e) {
+            logger.error("Error unarchiving deployment with ID: " + id, e);
+            throw new RuntimeException("Unable to unarchive deployment: " + e.getMessage(), e);
         }
     }
 }

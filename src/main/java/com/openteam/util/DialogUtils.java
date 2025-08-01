@@ -80,15 +80,20 @@ public class DialogUtils {
         
         // Enable/disable save button based on input
         Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
-        saveButton.setDisable(true);
+        saveButton.setDisable(existing == null); // For new records, start disabled; for editing, start enabled
         
-        titleField.textProperty().addListener((observable, oldValue, newValue) -> {
-            saveButton.setDisable(newValue.trim().isEmpty() || contentArea.getText().trim().isEmpty());
-        });
+        Runnable validateInput = () -> {
+            boolean valid = !titleField.getText().trim().isEmpty() && !contentArea.getText().trim().isEmpty();
+            saveButton.setDisable(!valid);
+        };
         
-        contentArea.textProperty().addListener((observable, oldValue, newValue) -> {
-            saveButton.setDisable(titleField.getText().trim().isEmpty() || newValue.trim().isEmpty());
-        });
+        // Add listeners to all fields
+        titleField.textProperty().addListener((obs, old, newVal) -> validateInput.run());
+        contentArea.textProperty().addListener((obs, old, newVal) -> validateInput.run());
+        priorityCombo.valueProperty().addListener((obs, old, newVal) -> validateInput.run());
+        
+        // Initial validation call
+        validateInput.run();
         
         dialog.getDialogPane().setContent(grid);
         
@@ -186,11 +191,22 @@ public class DialogUtils {
         
         // Enable/disable save button based on input
         Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
-        saveButton.setDisable(true);
+        saveButton.setDisable(existing == null); // For new records, start disabled; for editing, start enabled
         
-        titleField.textProperty().addListener((observable, oldValue, newValue) -> {
-            saveButton.setDisable(newValue.trim().isEmpty());
-        });
+        Runnable validateInput = () -> {
+            boolean valid = !titleField.getText().trim().isEmpty();
+            saveButton.setDisable(!valid);
+        };
+        
+        // Add listeners to all fields
+        titleField.textProperty().addListener((obs, old, newVal) -> validateInput.run());
+        typeCombo.valueProperty().addListener((obs, old, newVal) -> validateInput.run());
+        locationField.textProperty().addListener((obs, old, newVal) -> validateInput.run());
+        descriptionArea.textProperty().addListener((obs, old, newVal) -> validateInput.run());
+        dateTimePicker.getDatePicker().valueProperty().addListener((obs, old, newVal) -> validateInput.run());
+        
+        // Initial validation call
+        validateInput.run();
         
         dialog.getDialogPane().setContent(grid);
         
@@ -274,6 +290,14 @@ public class DialogUtils {
         statusCombo.setValue(DeploymentStatus.PLANNED);
         statusCombo.setPrefWidth(150);
         
+        TextField ticketNumberField = new TextField();
+        ticketNumberField.setPromptText("Ticket number (optional)");
+        ticketNumberField.setPrefWidth(200);
+        
+        TextField documentationUrlField = new TextField();
+        documentationUrlField.setPromptText("Documentation URL (optional)");
+        documentationUrlField.setPrefWidth(300);
+        
         TextArea releaseNotesArea = new TextArea();
         releaseNotesArea.setPromptText("Release notes");
         releaseNotesArea.setPrefRowCount(4);
@@ -289,6 +313,8 @@ public class DialogUtils {
             }
             environmentCombo.setValue(existing.getEnvironment());
             statusCombo.setValue(existing.getStatus());
+            ticketNumberField.setText(existing.getTicketNumber() != null ? existing.getTicketNumber() : "");
+            documentationUrlField.setText(existing.getDocumentationUrl() != null ? existing.getDocumentationUrl() : "");
             releaseNotesArea.setText(existing.getReleaseNotes());
         }
         
@@ -296,18 +322,22 @@ public class DialogUtils {
         grid.add(releaseNameField, 1, 0);
         grid.add(new Label("Version:"), 0, 1);
         grid.add(versionField, 1, 1);
-        grid.add(new Label("Deployment Date:"), 0, 2);
-        grid.add(deploymentDatePicker, 1, 2);
-        grid.add(new Label("Environment:"), 0, 3);
-        grid.add(environmentCombo, 1, 3);
-        grid.add(new Label("Status:"), 0, 4);
-        grid.add(statusCombo, 1, 4);
-        grid.add(new Label("Release Notes:"), 0, 5);
-        grid.add(releaseNotesArea, 1, 5);
+        grid.add(new Label("Ticket Number:"), 0, 2);
+        grid.add(ticketNumberField, 1, 2);
+        grid.add(new Label("Documentation URL:"), 0, 3);
+        grid.add(documentationUrlField, 1, 3);
+        grid.add(new Label("Deployment Date:"), 0, 4);
+        grid.add(deploymentDatePicker, 1, 4);
+        grid.add(new Label("Environment:"), 0, 5);
+        grid.add(environmentCombo, 1, 5);
+        grid.add(new Label("Status:"), 0, 6);
+        grid.add(statusCombo, 1, 6);
+        grid.add(new Label("Release Notes:"), 0, 7);
+        grid.add(releaseNotesArea, 1, 7);
         
         // Enable/disable save button based on input
         Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
-        saveButton.setDisable(true);
+        saveButton.setDisable(existing == null); // For new records, start disabled; for editing, start enabled
         
         Runnable validateInput = () -> {
             boolean valid = !releaseNameField.getText().trim().isEmpty() &&
@@ -316,9 +346,18 @@ public class DialogUtils {
             saveButton.setDisable(!valid);
         };
         
+        // Add listeners to all fields that should trigger validation
         releaseNameField.textProperty().addListener((obs, old, newVal) -> validateInput.run());
         versionField.textProperty().addListener((obs, old, newVal) -> validateInput.run());
+        ticketNumberField.textProperty().addListener((obs, old, newVal) -> validateInput.run());
+        documentationUrlField.textProperty().addListener((obs, old, newVal) -> validateInput.run());
+        releaseNotesArea.textProperty().addListener((obs, old, newVal) -> validateInput.run());
+        environmentCombo.valueProperty().addListener((obs, old, newVal) -> validateInput.run());
+        statusCombo.valueProperty().addListener((obs, old, newVal) -> validateInput.run());
         deploymentDatePicker.getDatePicker().valueProperty().addListener((obs, old, newVal) -> validateInput.run());
+        
+        // Initial validation call
+        validateInput.run();
         
         dialog.getDialogPane().setContent(grid);
         
@@ -344,6 +383,8 @@ public class DialogUtils {
                             releaseNotesArea.getText().trim().isEmpty() ? null : releaseNotesArea.getText().trim(),
                             environmentCombo.getValue(),
                             statusCombo.getValue(),
+                            ticketNumberField.getText().trim().isEmpty() ? null : ticketNumberField.getText().trim(),
+                            documentationUrlField.getText().trim().isEmpty() ? null : documentationUrlField.getText().trim(),
                             currentUser // created by
                         );
                     } else {
@@ -352,6 +393,8 @@ public class DialogUtils {
                         existing.setVersion(versionField.getText().trim());
                         existing.setDeploymentDateTime(deploymentDateTime);
                         existing.setReleaseNotes(releaseNotesArea.getText().trim().isEmpty() ? null : releaseNotesArea.getText().trim());
+                        existing.setTicketNumber(ticketNumberField.getText().trim().isEmpty() ? null : ticketNumberField.getText().trim());
+                        existing.setDocumentationUrl(documentationUrlField.getText().trim().isEmpty() ? null : documentationUrlField.getText().trim());
                         existing.setEnvironment(environmentCombo.getValue());
                         existing.setStatus(statusCombo.getValue());
                         existing.setUpdatedBy(currentUser);
@@ -360,6 +403,147 @@ public class DialogUtils {
                     }
                 } catch (Exception e) {
                     UIUtils.showErrorDialog("Invalid date", "Please select a valid deployment date and time");
+                    return null;
+                }
+            }
+            return null;
+        });
+        
+        return dialog.showAndWait();
+    }
+    
+    /**
+     * Shows dialog for creating/editing target dates.
+     */
+    public static Optional<TargetDate> showTargetDateDialog(TargetDate existing, User currentUser) {
+        Dialog<TargetDate> dialog = new Dialog<>();
+        dialog.setTitle(existing == null ? "Create Target Date" : "Edit Target Date");
+        dialog.setHeaderText(existing == null ? "Enter target date details:" : "Update target date details:");
+        
+        // Apply theme to dialog
+        applyDialogTheme(dialog);
+        
+        ButtonType saveButtonType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
+        
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+        
+        TextField projectNameField = new TextField();
+        projectNameField.setPromptText("Project name");
+        projectNameField.setPrefWidth(300);
+        
+        TextField taskNameField = new TextField();
+        taskNameField.setPromptText("Task/milestone name");
+        taskNameField.setPrefWidth(300);
+        
+        DateTimePicker targetDatePicker = new DateTimePicker();
+        targetDatePicker.setPromptText("Select target/due date and time");
+        
+        ComboBox<TargetDateStatus> statusCombo = new ComboBox<>();
+        statusCombo.getItems().addAll(TargetDateStatus.values());
+        statusCombo.setValue(TargetDateStatus.PENDING);
+        statusCombo.setPrefWidth(150);
+        
+        // For simplicity, we'll use the current user as driver. In a real app, you'd have a user selection
+        TextField driverField = new TextField();
+        driverField.setPromptText("Driver (person responsible)");
+        driverField.setPrefWidth(200);
+        driverField.setText(currentUser.getFullName());
+        driverField.setEditable(false); // For now, just use current user
+        
+        TextField documentationUrlField = new TextField();
+        documentationUrlField.setPromptText("Documentation URL (optional)");
+        documentationUrlField.setPrefWidth(400);
+        
+        // Populate fields if editing
+        if (existing != null) {
+            projectNameField.setText(existing.getProjectName());
+            taskNameField.setText(existing.getTaskName());
+            if (existing.getTargetDate() != null) {
+                targetDatePicker.setDateTime(existing.getTargetDate());
+            }
+            statusCombo.setValue(existing.getStatus());
+            if (existing.getDriverUser() != null) {
+                driverField.setText(existing.getDriverUser().getFullName());
+            }
+            documentationUrlField.setText(existing.getDocumentationUrl() != null ? existing.getDocumentationUrl() : "");
+        }
+        
+        grid.add(new Label("Project Name:"), 0, 0);
+        grid.add(projectNameField, 1, 0);
+        grid.add(new Label("Task/Milestone:"), 0, 1);
+        grid.add(taskNameField, 1, 1);
+        grid.add(new Label("Target Date:"), 0, 2);
+        grid.add(targetDatePicker, 1, 2);
+        grid.add(new Label("Status:"), 0, 3);
+        grid.add(statusCombo, 1, 3);
+        grid.add(new Label("Driver:"), 0, 4);
+        grid.add(driverField, 1, 4);
+        grid.add(new Label("Documentation URL:"), 0, 5);
+        grid.add(documentationUrlField, 1, 5);
+        
+        // Enable/disable save button based on input
+        Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
+        saveButton.setDisable(existing == null); // For new records, start disabled; for editing, start enabled
+        
+        Runnable validateInput = () -> {
+            boolean valid = !projectNameField.getText().trim().isEmpty() &&
+                           !taskNameField.getText().trim().isEmpty() &&
+                           targetDatePicker.isValid();
+            saveButton.setDisable(!valid);
+        };
+        
+        // Add listeners to all fields that should trigger validation
+        projectNameField.textProperty().addListener((obs, old, newVal) -> validateInput.run());
+        taskNameField.textProperty().addListener((obs, old, newVal) -> validateInput.run());
+        documentationUrlField.textProperty().addListener((obs, old, newVal) -> validateInput.run());
+        statusCombo.valueProperty().addListener((obs, old, newVal) -> validateInput.run());
+        targetDatePicker.getDatePicker().valueProperty().addListener((obs, old, newVal) -> validateInput.run());
+        
+        // Initial validation call
+        validateInput.run();
+        
+        dialog.getDialogPane().setContent(grid);
+        
+        // Request focus on project name field
+        projectNameField.requestFocus();
+        
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == saveButtonType) {
+                try {
+                    LocalDateTime targetDateTime = targetDatePicker.getDateTime();
+                    if (targetDateTime == null) {
+                        UIUtils.showErrorDialog("Missing date", "Please select a target date and time");
+                        return null;
+                    }
+                    
+                    if (existing == null) {
+                        // Create new
+                        return new TargetDate(
+                            projectNameField.getText().trim(),
+                            taskNameField.getText().trim(),
+                            targetDateTime,
+                            currentUser, // Use current user as driver for now
+                            documentationUrlField.getText().trim().isEmpty() ? null : documentationUrlField.getText().trim(),
+                            statusCombo.getValue(),
+                            currentUser // created by
+                        );
+                    } else {
+                        // Update existing
+                        existing.setProjectName(projectNameField.getText().trim());
+                        existing.setTaskName(taskNameField.getText().trim());
+                        existing.setTargetDate(targetDateTime);
+                        existing.setDocumentationUrl(documentationUrlField.getText().trim().isEmpty() ? null : documentationUrlField.getText().trim());
+                        existing.setStatus(statusCombo.getValue());
+                        existing.setUpdatedBy(currentUser);
+                        existing.setUpdatedAt(LocalDateTime.now());
+                        return existing;
+                    }
+                } catch (Exception e) {
+                    UIUtils.showErrorDialog("Invalid date", "Please select a valid target date and time");
                     return null;
                 }
             }

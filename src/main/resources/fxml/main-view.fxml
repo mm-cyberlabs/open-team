@@ -2,17 +2,23 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.MainController">
    <top>
       <HBox styleClass="top-navigation">
          <children>
+            <ImageView fitHeight="40.0" fitWidth="40.0" preserveRatio="true" styleClass="app-logo">
+               <image>
+                  <Image url="@../icons/openteam-logo.png" />
+               </image>
+            </ImageView>
             <Label styleClass="app-title" text="Open Team" />
             <Region HBox.hgrow="ALWAYS" />
             <TabPane fx:id="mainTabPane" styleClass="main-tabs" tabClosingPolicy="UNAVAILABLE">
                <tabs>
                   <Tab fx:id="announcementsTab" styleClass="nav-tab" text="📢 Announcements" />
-                  <Tab fx:id="activitiesTab" styleClass="nav-tab" text="🗓️ Activities" />
+                  <Tab fx:id="targetDatesTab" styleClass="nav-tab" text="🎯 Target Dates" />
                   <Tab fx:id="deploymentsTab" styleClass="nav-tab" text="🚀 Deployments" />
                </tabs>
             </TabPane>

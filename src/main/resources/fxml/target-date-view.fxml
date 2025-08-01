@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox fx:id="rootContainer" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.TargetDateController">
+   <children>
+      <HBox styleClass="toolbar">
+         <children>
+            <Label styleClass="view-title" text="Important Target Dates" />
+            <Region HBox.hgrow="ALWAYS" />
+            <TextField fx:id="searchField" prefWidth="200.0" promptText="Search target dates..." />
+            <CheckBox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
+            <ComboBox fx:id="statusFilter" prefWidth="150.0" promptText="Filter by Status" />
+         </children>
+      </HBox>
+      
+      <SplitPane fx:id="mainSplitPane" dividerPositions="0.65" VBox.vgrow="ALWAYS">
+         <items>
+            <VBox>
+               <children>
+                  <TableView fx:id="targetDatesTable" VBox.vgrow="ALWAYS">
+                     <columns>
+                        <TableColumn fx:id="projectNameColumn" prefWidth="200.0" text="Project" />
+                        <TableColumn fx:id="taskNameColumn" prefWidth="200.0" text="Task/Milestone" />
+                        <TableColumn fx:id="targetDateColumn" prefWidth="130.0" text="Target Date" />
+                        <TableColumn fx:id="driverColumn" prefWidth="120.0" text="Driver" />
+                        <TableColumn fx:id="statusColumn" prefWidth="100.0" text="Status" />
+                        <TableColumn fx:id="documentationColumn" prefWidth="120.0" text="Documentation" />
+                        <TableColumn fx:id="archivedColumn" prefWidth="80.0" text="Archived" />
+                     </columns>
+                  </TableView>
+                  <HBox styleClass="button-bar">
+                     <children>
+                        <Button onAction="#createTargetDate" styleClass="toolbar-button" text="Add New" />
+                        <Button onAction="#editTargetDate" styleClass="toolbar-button" text="Edit" />
+                        <Button onAction="#deleteTargetDate" styleClass="toolbar-button" text="Delete" />
+                        <Button onAction="#unarchiveTargetDate" styleClass="toolbar-button" text="Unarchive" />
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Button onAction="#clearSelection" text="Clear Selection" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+            
+            <VBox>
+               <children>
+                  <Label styleClass="details-title" text="Target Date Details" />
+                  <TextArea fx:id="detailsTextArea" editable="false" VBox.vgrow="ALWAYS" wrapText="true" />
+               </children>
+            </VBox>
+         </items>
+      </SplitPane>
+      
+      <HBox styleClass="status-bar">
+         <children>
+            <Label fx:id="statusLabel" text="Ready" />
+         </children>
+      </HBox>
+   </children>
+</VBox>

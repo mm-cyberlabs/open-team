@@ -19,7 +19,7 @@ public class OpenTeamApplication extends Application {
     private static final String APPLICATION_TITLE = "Open Team Communication App";
     private static final String MAIN_FXML = "/fxml/main-view.fxml";
     private static final String APPLICATION_CSS = "/css/futuristic-theme.css";
-    private static final String APPLICATION_ICON = "/icons/app-icon.png";
+    private static final String APPLICATION_ICON = "/icons/openteam-logo.png";
     
     @Override
     public void start(Stage primaryStage) {
@@ -89,7 +89,7 @@ public class OpenTeamApplication extends Application {
                 logger.info("Database connection test successful");
                 
                 // Run database migrations to ensure schema is up to date
-                com.openteam.util.DatabaseMigrationUtil.ensureArchiveColumnsExist();
+                com.openteam.util.DatabaseMigrationUtil.ensureColumnsExist();
                 
                 return true;
             } else {
@@ -117,8 +117,25 @@ public class OpenTeamApplication extends Application {
     public static void main(String[] args) {
         logger.info("Open Team Application main method called");
         
-        // Set system properties for JavaFX
+        // Set system properties for JavaFX and macOS
         System.setProperty("javafx.application.name", APPLICATION_TITLE);
+        
+        // macOS specific properties
+        if (System.getProperty("os.name").toLowerCase().contains("mac")) {
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+            System.setProperty("apple.awt.application.name", APPLICATION_TITLE);
+            System.setProperty("com.apple.mrj.application.apple.menu.about.name", APPLICATION_TITLE);
+            
+            // Try to set dock icon at startup
+            try {
+                var iconUrl = OpenTeamApplication.class.getResource(APPLICATION_ICON);
+                if (iconUrl != null) {
+                    System.setProperty("apple.awt.application.icon", iconUrl.getPath());
+                }
+            } catch (Exception e) {
+                logger.debug("Could not set apple.awt.application.icon property", e);
+            }
+        }
         
         // Launch JavaFX application
         launch(args);

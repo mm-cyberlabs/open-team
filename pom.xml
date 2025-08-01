@@ -166,6 +166,42 @@
                 </executions>
             </plugin>
 
+            <!-- Maven Shade Plugin for creating fat JAR -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>shaded</shadedClassifierName>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.openteam.OpenTeamApplication</mainClass>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <filters>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -175,6 +211,84 @@
                         <include>**/*Test.java</include>
                     </includes>
                 </configuration>
+            </plugin>
+
+            <!-- JavaFX jpackage plugin for creating native applications -->
+            <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.6.5</version>
+                <configuration>
+                    <name>OpenTeam</name>
+                    <appVersion>${project.version}</appVersion>
+                    <vendor>Open Team</vendor>
+                    <destination>target/dist</destination>
+                    <module>open.team.app/com.openteam.OpenTeamApplication</module>
+                    <runtimeImage>target/image</runtimeImage>
+                    <javaOptions>
+                        <option>-Dfile.encoding=UTF-8</option>
+                        <option>-Djava.awt.headless=false</option>
+                    </javaOptions>
+                    <arguments>
+                        <argument>--enable-preview</argument>
+                    </arguments>
+                    
+                    <!-- macOS specific options -->
+                    <type>APP_IMAGE</type>
+                    <macPackageName>OpenTeam</macPackageName>
+                    <macBundleName>Open Team Communication</macBundleName>
+                    <macBundleIdentifier>com.openteam.app</macBundleIdentifier>
+                    <icon>src/main/resources/icons/openteam-logo.png</icon>
+                    <macSign>false</macSign>
+                    
+                    <!-- Application description -->
+                    <description>Team communication and deployment tracking application</description>
+                    <copyright>2024 Open Team</copyright>
+                    <licenseFile>LICENSE</licenseFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>mac</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jpackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Create custom JRE with jlink -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jlink-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <runtimeImage>target/image</runtimeImage>
+                    <addModules>
+                        <addModule>java.base</addModule>
+                        <addModule>java.desktop</addModule>
+                        <addModule>java.sql</addModule>
+                        <addModule>java.naming</addModule>
+                        <addModule>java.logging</addModule>
+                        <addModule>java.xml</addModule>
+                        <addModule>javafx.controls</addModule>
+                        <addModule>javafx.fxml</addModule>
+                        <addModule>jdk.crypto.ec</addModule>
+                    </addModules>
+                    <launcher>openteam=open.team.app/com.openteam.OpenTeamApplication</launcher>
+                    <noHeaderFiles>true</noHeaderFiles>
+                    <noManPages>true</noManPages>
+                    <stripDebug>true</stripDebug>
+                    <compress>2</compress>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jlink</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

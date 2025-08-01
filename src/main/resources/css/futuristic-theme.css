@@ -32,11 +32,17 @@
     -fx-alignment: center-left;
 }
 
+.app-logo {
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 1);
+}
+
 .app-title {
     -fx-text-fill: -text-light;
     -fx-font-size: 20px;
     -fx-font-weight: bold;
-    -fx-padding: 0 10 0 0;
+    -fx-padding: 0 10 0 10;
 }
 
 .top-toolbar {
@@ -183,6 +189,26 @@
 .toolbar-button:hover {
     -fx-background-color: -hover-gray;
     -fx-effect: dropshadow(gaussian, rgba(64, 64, 64, 0.6), 6, 0, 0, 2);
+}
+
+/* Search field styling */
+.toolbar .text-field {
+    -fx-background-color: -secondary-dark;
+    -fx-text-fill: -text-light;
+    -fx-prompt-text-fill: -neutral-gray;
+    -fx-border-color: -accent-gray;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 8 12 8 12;
+    -fx-font-size: 12px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 2, 0, 0, 1);
+}
+
+.toolbar .text-field:focused {
+    -fx-border-color: -success-green;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 133, 0.3), 6, 0, 0, 2);
 }
 
 .update-button {
@@ -489,6 +515,132 @@
     -fx-font-weight: bold;
 }
 
+/* DatePicker popup styling - comprehensive approach */
+/* Target the popup window itself */
+.popup-window {
+    -fx-background-color: -secondary-dark !important;
+}
+
+/* DatePicker popup styling - using correct JavaFX CSS selectors */
+.date-picker-popup,
+.date-picker .date-picker-popup {
+    -fx-background-color: -secondary-dark !important;
+    -fx-border-color: -success-green;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 10, 0, 0, 3);
+}
+
+.date-picker .date-picker-popup > *,
+.date-picker-popup > * {
+    -fx-background-color: -secondary-dark !important;
+}
+
+.date-picker .date-picker-popup .month-year-pane,
+.date-picker-popup .month-year-pane {
+    -fx-background-color: -secondary-dark !important;
+}
+
+.date-picker .date-picker-popup .month-year-pane .label,
+.date-picker-popup .month-year-pane .label {
+    -fx-text-fill: -text-light !important;
+    -fx-font-weight: bold;
+}
+
+.date-picker .date-picker-popup .month-year-pane .spinner,
+.date-picker-popup .month-year-pane .spinner {
+    -fx-background-color: -secondary-dark !important;
+}
+
+.date-picker .date-picker-popup .month-year-pane .left-button,
+.date-picker .date-picker-popup .month-year-pane .right-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -success-green;
+    -fx-font-weight: bold;
+}
+
+.date-picker .date-picker-popup .month-year-pane .left-button:hover,
+.date-picker .date-picker-popup .month-year-pane .right-button:hover {
+    -fx-background-color: -accent-gray;
+    -fx-background-radius: 4;
+}
+
+.date-picker .date-picker-popup .calendar-grid,
+.date-picker-popup .calendar-grid {
+    -fx-background-color: -secondary-dark !important;
+}
+
+.date-picker .date-picker-popup .day-name-cell,
+.date-picker-popup .day-name-cell {
+    -fx-background-color: -accent-gray !important;
+    -fx-text-fill: -success-green !important;
+    -fx-font-weight: bold;
+    -fx-alignment: center;
+}
+
+.date-picker .date-picker-popup .day-cell,
+.date-picker-popup .day-cell {
+    -fx-background-color: -secondary-dark !important;
+    -fx-text-fill: -text-light !important;
+    -fx-alignment: center;
+    -fx-font-size: 12px;
+}
+
+.date-picker .date-picker-popup .day-cell:hover {
+    -fx-background-color: -accent-gray;
+    -fx-background-radius: 4;
+}
+
+.date-picker .date-picker-popup .day-cell:selected {
+    -fx-background-color: -success-green;
+    -fx-text-fill: -primary-dark;
+    -fx-background-radius: 4;
+    -fx-font-weight: bold;
+}
+
+.date-picker .date-picker-popup .today {
+    -fx-background-color: rgba(0, 255, 133, 0.3);
+    -fx-text-fill: -success-green;
+    -fx-background-radius: 4;
+    -fx-font-weight: bold;
+}
+
+.date-picker .date-picker-popup .previous-month,
+.date-picker .date-picker-popup .next-month {
+    -fx-text-fill: -neutral-gray;
+}
+
+.date-picker .date-picker-popup .week-number-cell {
+    -fx-background-color: -accent-gray;
+    -fx-text-fill: -neutral-gray;
+    -fx-alignment: center;
+}
+
+/* Additional DatePicker styling */
+.date-picker .date-picker-popup .chronology-popup {
+    -fx-background-color: -secondary-dark;
+    -fx-border-color: -success-green;
+}
+
+.date-picker .date-picker-popup .list-view {
+    -fx-background-color: -secondary-dark;
+}
+
+.date-picker .date-picker-popup .list-view .list-cell {
+    -fx-background-color: -secondary-dark;
+    -fx-text-fill: -text-light;
+}
+
+.date-picker .date-picker-popup .list-view .list-cell:hover {
+    -fx-background-color: -accent-gray;
+}
+
+.date-picker .date-picker-popup .list-view .list-cell:selected {
+    -fx-background-color: -success-green;
+    -fx-text-fill: -primary-dark;
+}
+
 /* Dialog styling */
 .dialog-pane {
     -fx-background-color: -primary-dark;
@@ -620,4 +772,19 @@
 .date-picker-popup .day-name-cell {
     -fx-text-fill: -text-light;
     -fx-font-weight: bold;
+}
+
+/* Global DatePicker overrides - force dark theme */
+.date-picker-popup * {
+    -fx-background-color: -secondary-dark !important;
+}
+
+.date-picker-popup .day-cell * {
+    -fx-text-fill: -text-light !important;
+}
+
+/* Force background for all popup elements */
+.popup-window .date-picker-popup,
+.popup-window * {
+    -fx-background-color: -secondary-dark !important;
 }

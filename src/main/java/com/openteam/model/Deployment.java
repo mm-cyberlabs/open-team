@@ -16,6 +16,8 @@ public class Deployment {
     private String releaseNotes;
     private Environment environment;
     private DeploymentStatus status;
+    private String ticketNumber;
+    private String documentationUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private User createdBy;
@@ -41,6 +43,23 @@ public class Deployment {
         this.releaseNotes = releaseNotes;
         this.environment = environment;
         this.status = status;
+        this.createdBy = createdBy;
+        this.updatedBy = createdBy;
+    }
+    
+    public Deployment(String releaseName, String version, LocalDateTime deploymentDateTime,
+                     User driverUser, String releaseNotes, Environment environment,
+                     DeploymentStatus status, String ticketNumber, String documentationUrl, User createdBy) {
+        this();
+        this.releaseName = releaseName;
+        this.version = version;
+        this.deploymentDateTime = deploymentDateTime;
+        this.driverUser = driverUser;
+        this.releaseNotes = releaseNotes;
+        this.environment = environment;
+        this.status = status;
+        this.ticketNumber = ticketNumber;
+        this.documentationUrl = documentationUrl;
         this.createdBy = createdBy;
         this.updatedBy = createdBy;
     }
@@ -148,6 +167,22 @@ public class Deployment {
     
     public void setIsArchived(Boolean isArchived) {
         this.isArchived = isArchived;
+    }
+    
+    public String getTicketNumber() {
+        return ticketNumber;
+    }
+    
+    public void setTicketNumber(String ticketNumber) {
+        this.ticketNumber = ticketNumber;
+    }
+    
+    public String getDocumentationUrl() {
+        return documentationUrl;
+    }
+    
+    public void setDocumentationUrl(String documentationUrl) {
+        this.documentationUrl = documentationUrl;
     }
     
     @Override
