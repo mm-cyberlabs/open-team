@@ -203,12 +203,23 @@ public class MainController implements Initializable {
         UIUtils.showInfoDialog(
             "About Open Team",
             "Open Team Communication App v1.0.0",
-            "A JavaFX desktop application for team communication and deployment tracking.\n\n" +
-            "Features:\n" +
+            "A JavaFX-based application designed for software teams to enhance communication " +
+            "and software delivery transparency through a streamlined interface with no complex " +
+            "web integrations or overwhelming screens.\n\n" +
+            
+            "Development Phases:\n" +
+            "• Phase 1 [COMPLETED]: Core application with CRUD operations\n" +
+            "• Phase 2 [IN PROGRESS]: Real-time notifications, GitHub integration for status updates, " +
+            "and enhanced UI based on user feedback\n\n" +
+            
+            "Key Features:\n" +
             "• Team announcements management\n" +
-            "• Important target dates and milestones tracking\n" +
+            "• Important target dates and milestone tracking\n" +
             "• Software deployment monitoring\n" +
-            "• Real-time updates with audit logging"
+            "• Audit logging and archival system\n\n" +
+            
+            "Copyright © 2025 MM-CyberLabs, LLC\n" +
+            "All rights reserved. This software is protected by copyright law."
         );
     }
 }

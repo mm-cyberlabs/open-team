@@ -2,6 +2,7 @@ package com.openteam.util;
 
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -32,6 +33,14 @@ public class UIUtils {
         alert.setTitle(title);
         alert.setHeaderText(header);
         alert.setContentText(content);
+        
+        // Apply dark theme to the About dialog
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.getStylesheets().add(
+            UIUtils.class.getResource("/css/futuristic-theme.css").toExternalForm()
+        );
+        dialogPane.getStyleClass().add("dialog-pane");
+        
         alert.showAndWait();
     }
     
@@ -47,6 +56,14 @@ public class UIUtils {
         alert.setTitle(title);
         alert.setHeaderText(header);
         alert.setContentText(content);
+        
+        // Apply dark theme to error dialogs
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.getStylesheets().add(
+            UIUtils.class.getResource("/css/futuristic-theme.css").toExternalForm()
+        );
+        dialogPane.getStyleClass().add("dialog-pane");
+        
         alert.showAndWait();
         
         logger.error("Error dialog shown - Title: {}, Header: {}, Content: {}", 
