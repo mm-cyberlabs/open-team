@@ -212,7 +212,7 @@ public class DateTimePicker extends VBox {
         timeLabel.getStyleClass().add("date-time-label");
         
         // Set background and text colors to match the dark theme
-        setStyle("-fx-background-color: #2d2d2d; -fx-text-fill: #ffffff;");
+        setStyle("-fx-background-color: #2d2d2d; -fx-text-fill: rgba(255,255,255,0.44);");
     }
     
     /**

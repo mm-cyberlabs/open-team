@@ -15,6 +15,10 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
+import io.github.palexdev.materialfx.controls.*;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,8 +46,8 @@ public class TargetDateController implements Initializable {
     @FXML private Label statusLabel;
     @FXML private TextArea detailsTextArea;
     @FXML private ComboBox<TargetDateStatus> statusFilter;
-    @FXML private CheckBox showArchivedCheckBox;
-    @FXML private TextField searchField;
+    @FXML private MFXCheckbox showArchivedCheckBox;
+    @FXML private MFXTextField searchField;
     @FXML private SplitPane mainSplitPane;
     
     private final TargetDateService targetDateService;
@@ -171,9 +175,49 @@ public class TargetDateController implements Initializable {
             }
         );
         
-        // Allow clicking on selected row to deselect
+        // Allow clicking on selected row to deselect and handle overdue styling
         targetDatesTable.setRowFactory(tv -> {
-            TableRow<TargetDate> row = new TableRow<>();
+            TableRow<TargetDate> row = new TableRow<TargetDate>() {
+                private Timeline blinkTimeline;
+                
+                @Override
+                protected void updateItem(TargetDate targetDate, boolean empty) {
+                    super.updateItem(targetDate, empty);
+                    
+                    // Stop any existing animation
+                    if (blinkTimeline != null) {
+                        blinkTimeline.stop();
+                        blinkTimeline = null;
+                    }
+                    
+                    if (empty || targetDate == null) {
+                        setStyle("");
+                        getStyleClass().removeAll("overdue-row");
+                    } else {
+                        // Check if target date is overdue and not completed
+                        boolean isOverdue = targetDate.getTargetDate() != null &&
+                            targetDate.getTargetDate().isBefore(java.time.LocalDateTime.now()) &&
+                            targetDate.getStatus() != TargetDateStatus.COMPLETED &&
+                            targetDate.getStatus() != TargetDateStatus.CANCELLED;
+                        
+                        if (isOverdue) {
+                            getStyleClass().add("overdue-row");
+                            // Create blinking animation
+                            blinkTimeline = new Timeline(
+                                new KeyFrame(Duration.seconds(0), e -> setStyle("-fx-background-color: rgba(244, 67, 54, 0.3);")),
+                                new KeyFrame(Duration.seconds(1), e -> setStyle("-fx-background-color: rgba(244, 67, 54, 0.8);")),
+                                new KeyFrame(Duration.seconds(2), e -> setStyle("-fx-background-color: rgba(244, 67, 54, 0.3);"))
+                            );
+                            blinkTimeline.setCycleCount(Timeline.INDEFINITE);
+                            blinkTimeline.play();
+                        } else {
+                            getStyleClass().removeAll("overdue-row");
+                            setStyle("");
+                        }
+                    }
+                }
+            };
+            
             row.setOnMouseClicked(event -> {
                 if (event.getClickCount() == 1 && !row.isEmpty()) {
                     if (row.isSelected()) {
@@ -190,19 +234,21 @@ public class TargetDateController implements Initializable {
         statusFilter.getItems().add(null);
         statusFilter.getItems().addAll(TargetDateStatus.values());
         
-        statusFilter.setButtonCell(new ListCell<TargetDateStatus>() {
-            @Override
-            protected void updateItem(TargetDateStatus item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(item == null ? "All Statuses" : item.getDisplayName());
-            }
-        });
+        // Disable search functionality - make it a simple dropdown
+        statusFilter.setEditable(false);
+        // Set prompt text instead of selecting an item to avoid green highlight
+        statusFilter.setPromptText("All");
+        // Don't select any item initially
         
-        statusFilter.setCellFactory(listView -> new ListCell<TargetDateStatus>() {
+        statusFilter.setConverter(new javafx.util.StringConverter<TargetDateStatus>() {
             @Override
-            protected void updateItem(TargetDateStatus item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(item == null ? "All Statuses" : item.getDisplayName());
+            public String toString(TargetDateStatus item) {
+                return item == null ? "All Statuses" : item.getDisplayName();
+            }
+            
+            @Override
+            public TargetDateStatus fromString(String string) {
+                return null;
             }
         });
         

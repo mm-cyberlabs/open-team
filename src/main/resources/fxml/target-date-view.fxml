@@ -2,6 +2,7 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import io.github.palexdev.materialfx.controls.*?>
 
 <VBox fx:id="rootContainer" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.TargetDateController">
    <children>
@@ -9,9 +10,9 @@
          <children>
             <Label styleClass="view-title" text="Important Target Dates" />
             <Region HBox.hgrow="ALWAYS" />
-            <TextField fx:id="searchField" prefWidth="200.0" promptText="Search target dates..." />
-            <CheckBox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
-            <ComboBox fx:id="statusFilter" prefWidth="150.0" promptText="Filter by Status" />
+            <MFXTextField fx:id="searchField" prefWidth="200.0" promptText="Search target dates..." styleClass="mfx-text-field" />
+            <MFXCheckbox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
+            <ComboBox fx:id="statusFilter" prefWidth="150.0" promptText="All" styleClass="combo-box" />
          </children>
       </HBox>
       
@@ -32,12 +33,12 @@
                   </TableView>
                   <HBox styleClass="button-bar">
                      <children>
-                        <Button onAction="#createTargetDate" styleClass="toolbar-button" text="Add New" />
-                        <Button onAction="#editTargetDate" styleClass="toolbar-button" text="Edit" />
-                        <Button onAction="#deleteTargetDate" styleClass="toolbar-button" text="Delete" />
-                        <Button onAction="#unarchiveTargetDate" styleClass="toolbar-button" text="Unarchive" />
+                        <MFXButton onAction="#createTargetDate" styleClass="toolbar-button" text="Add New" />
+                        <MFXButton onAction="#editTargetDate" styleClass="toolbar-button" text="Edit" />
+                        <MFXButton onAction="#deleteTargetDate" styleClass="toolbar-button" text="Delete" />
+                        <MFXButton onAction="#unarchiveTargetDate" styleClass="toolbar-button" text="Unarchive" />
                         <Region HBox.hgrow="ALWAYS" />
-                        <Button onAction="#clearSelection" text="Clear Selection" />
+                        <MFXButton onAction="#clearSelection" text="Clear Selection" />
                      </children>
                   </HBox>
                </children>

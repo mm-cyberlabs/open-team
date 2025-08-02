@@ -1,10 +1,12 @@
 package com.openteam.service;
 
 import com.openteam.model.Deployment;
+import com.openteam.model.DeploymentComment;
 import com.openteam.model.DeploymentStatus;
 import com.openteam.model.Environment;
 import com.openteam.model.User;
 import com.openteam.repository.DeploymentRepository;
+import com.openteam.repository.DeploymentCommentRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,9 +22,11 @@ public class DeploymentService {
     private static final Logger logger = LoggerFactory.getLogger(DeploymentService.class);
     
     private final DeploymentRepository deploymentRepository;
+    private final DeploymentCommentRepository commentRepository;
     
     public DeploymentService() {
         this.deploymentRepository = new DeploymentRepository();
+        this.commentRepository = new DeploymentCommentRepository();
     }
     
     /**
@@ -426,5 +430,79 @@ public class DeploymentService {
         }
         
         deploymentRepository.unarchiveById(id);
+    }
+    
+    /**
+     * Retrieves all comments for a deployment in descending order by creation date.
+     * 
+     * @param deploymentId Deployment ID
+     * @return List of comments for the deployment
+     */
+    public List<DeploymentComment> getCommentsForDeployment(Long deploymentId) {
+        logger.debug("Retrieving comments for deployment ID: {}", deploymentId);
+        return commentRepository.findByDeploymentId(deploymentId);
+    }
+    
+    /**
+     * Adds a comment to a deployment.
+     * 
+     * @param deploymentId Deployment ID
+     * @param commentText Comment text
+     * @param createdBy User creating the comment
+     * @return Created comment
+     * @throws IllegalArgumentException if deployment not found or validation fails
+     */
+    public DeploymentComment addCommentToDeployment(Long deploymentId, String commentText, User createdBy) {
+        logger.info("Adding comment to deployment ID: {}", deploymentId);
+        
+        // Validate inputs
+        if (commentText == null || commentText.trim().isEmpty()) {
+            throw new IllegalArgumentException("Comment text cannot be empty");
+        }
+        
+        if (commentText.length() > 2000) {
+            throw new IllegalArgumentException("Comment text cannot exceed 2000 characters");
+        }
+        
+        if (createdBy == null || createdBy.getId() == null) {
+            throw new IllegalArgumentException("Valid user is required for creating comments");
+        }
+        
+        // Verify deployment exists
+        Optional<Deployment> deployment = deploymentRepository.findById(deploymentId);
+        if (deployment.isEmpty()) {
+            throw new IllegalArgumentException("Deployment not found with ID: " + deploymentId);
+        }
+        
+        DeploymentComment comment = new DeploymentComment(deploymentId, commentText.trim(), createdBy);
+        return commentRepository.save(comment);
+    }
+    
+    /**
+     * Deletes a comment by ID.
+     * 
+     * @param commentId Comment ID to delete
+     * @throws IllegalArgumentException if comment not found
+     */
+    public void deleteComment(Long commentId) {
+        logger.info("Deleting comment with ID: {}", commentId);
+        
+        Optional<DeploymentComment> comment = commentRepository.findById(commentId);
+        if (comment.isEmpty()) {
+            throw new IllegalArgumentException("Comment not found with ID: " + commentId);
+        }
+        
+        commentRepository.deleteById(commentId);
+    }
+    
+    /**
+     * Gets the count of comments for a deployment.
+     * 
+     * @param deploymentId Deployment ID
+     * @return Number of comments
+     */
+    public int getCommentCountForDeployment(Long deploymentId) {
+        logger.debug("Getting comment count for deployment ID: {}", deploymentId);
+        return commentRepository.countByDeploymentId(deploymentId);
     }
 }

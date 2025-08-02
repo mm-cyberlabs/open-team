@@ -18,6 +18,7 @@ public class Announcement {
     private User updatedBy;
     private Boolean isActive;
     private Boolean isArchived;
+    private LocalDateTime expirationDate;
     
     public Announcement() {
         this.priority = Priority.NORMAL;
@@ -115,6 +116,22 @@ public class Announcement {
     
     public void setIsArchived(Boolean isArchived) {
         this.isArchived = isArchived;
+    }
+    
+    public LocalDateTime getExpirationDate() {
+        return expirationDate;
+    }
+    
+    public void setExpirationDate(LocalDateTime expirationDate) {
+        this.expirationDate = expirationDate;
+    }
+    
+    /**
+     * Checks if this announcement has expired.
+     * @return true if the announcement has an expiration date and it's in the past
+     */
+    public boolean isExpired() {
+        return expirationDate != null && expirationDate.isBefore(LocalDateTime.now());
     }
     
     @Override

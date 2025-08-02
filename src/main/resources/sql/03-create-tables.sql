@@ -25,7 +25,8 @@ CREATE TABLE announcements (
     created_by BIGINT REFERENCES users(id),
     updated_by BIGINT REFERENCES users(id),
     is_active BOOLEAN DEFAULT true,
-    is_archived BOOLEAN DEFAULT false
+    is_archived BOOLEAN DEFAULT false,
+    expiration_date timestamp with time zone
 );
 
 -- Important target dates and project milestones
@@ -63,6 +64,15 @@ CREATE TABLE deployments (
     updated_by BIGINT REFERENCES users(id)
 );
 
+-- Deployment comments table
+CREATE TABLE deployment_comments (
+    id BIGSERIAL PRIMARY KEY,
+    deployment_id BIGINT NOT NULL REFERENCES deployments(id) ON DELETE CASCADE,
+    comment_text TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_by BIGINT REFERENCES users(id)
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_announcements_created_at ON announcements(created_at DESC);
 CREATE INDEX idx_announcements_priority ON announcements(priority);
@@ -75,6 +85,8 @@ CREATE INDEX idx_deployments_datetime ON deployments(deployment_datetime DESC);
 CREATE INDEX idx_deployments_status ON deployments(status);
 CREATE INDEX idx_deployments_archived ON deployments(is_archived);
 CREATE INDEX idx_deployments_ticket_number ON deployments(ticket_number);
+CREATE INDEX idx_deployment_comments_deployment_id ON deployment_comments(deployment_id);
+CREATE INDEX idx_deployment_comments_created_at ON deployment_comments(created_at DESC);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()

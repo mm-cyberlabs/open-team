@@ -1,14 +1,20 @@
 package com.openteam.util;
 
 import com.openteam.model.*;
+import com.openteam.service.DeploymentService;
+import io.github.palexdev.materialfx.controls.*;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
 import javafx.util.Pair;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
@@ -64,19 +70,51 @@ public class DialogUtils {
         priorityCombo.setValue(Priority.NORMAL);
         priorityCombo.setPrefWidth(150);
         
+        DatePicker expirationDatePicker = new DatePicker();
+        expirationDatePicker.setPromptText("Optional expiration date");
+        expirationDatePicker.setPrefWidth(150);
+        
+        CheckBox neverExpiresCheckBox = new CheckBox("Never expires");
+        neverExpiresCheckBox.setSelected(true);
+        
+        // When "Never expires" is checked, disable the date picker
+        neverExpiresCheckBox.selectedProperty().addListener((obs, oldVal, newVal) -> {
+            expirationDatePicker.setDisable(newVal);
+            if (newVal) {
+                expirationDatePicker.setValue(null);
+            }
+        });
+        
+        // Initially disable the date picker since "Never expires" is checked
+        expirationDatePicker.setDisable(true);
+        
         // Populate fields if editing
         if (existing != null) {
             titleField.setText(existing.getTitle());
             contentArea.setText(existing.getContent());
             priorityCombo.setValue(existing.getPriority());
+            
+            // Handle expiration date
+            if (existing.getExpirationDate() != null) {
+                expirationDatePicker.setValue(existing.getExpirationDate().toLocalDate());
+                neverExpiresCheckBox.setSelected(false);
+                expirationDatePicker.setDisable(false);
+            } else {
+                neverExpiresCheckBox.setSelected(true);
+                expirationDatePicker.setDisable(true);
+            }
         }
         
         grid.add(new Label("Title:"), 0, 0);
         grid.add(titleField, 1, 0);
         grid.add(new Label("Priority:"), 0, 1);
         grid.add(priorityCombo, 1, 1);
-        grid.add(new Label("Content:"), 0, 2);
-        grid.add(contentArea, 1, 2);
+        grid.add(new Label("Expires:"), 0, 2);
+        grid.add(neverExpiresCheckBox, 1, 2);
+        grid.add(new Label("Date:"), 0, 3);
+        grid.add(expirationDatePicker, 1, 3);
+        grid.add(new Label("Content:"), 0, 4);
+        grid.add(contentArea, 1, 4);
         
         // Enable/disable save button based on input
         Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
@@ -102,19 +140,29 @@ public class DialogUtils {
         
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == saveButtonType) {
+                // Calculate expiration date
+                LocalDateTime expirationDateTime = null;
+                if (!neverExpiresCheckBox.isSelected() && expirationDatePicker.getValue() != null) {
+                    // Set expiration to end of selected day (23:59:59)
+                    expirationDateTime = expirationDatePicker.getValue().atTime(LocalTime.MAX);
+                }
+                
                 if (existing == null) {
                     // Create new
-                    return new Announcement(
+                    Announcement newAnnouncement = new Announcement(
                         titleField.getText().trim(),
                         contentArea.getText().trim(),
                         priorityCombo.getValue(),
                         currentUser
                     );
+                    newAnnouncement.setExpirationDate(expirationDateTime);
+                    return newAnnouncement;
                 } else {
                     // Update existing
                     existing.setTitle(titleField.getText().trim());
                     existing.setContent(contentArea.getText().trim());
                     existing.setPriority(priorityCombo.getValue());
+                    existing.setExpirationDate(expirationDateTime);
                     existing.setUpdatedBy(currentUser);
                     existing.setUpdatedAt(LocalDateTime.now());
                     return existing;
@@ -572,5 +620,245 @@ public class DialogUtils {
         
         Optional<ButtonType> result = alert.showAndWait();
         return result.isPresent() && result.get() == ButtonType.OK;
+    }
+    
+    /**
+     * Shows dialog for viewing and adding deployment comments using MaterialFX components.
+     * 
+     * @param deployment The deployment to show comments for
+     * @param currentUser Current user for adding comments
+     */
+    public static void showDeploymentCommentsDialog(Deployment deployment, User currentUser) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Comments - " + deployment.getReleaseName() + " " + deployment.getVersion());
+        dialog.setHeaderText("Comments for deployment:");
+        
+        // Apply theme to dialog
+        applyDialogTheme(dialog);
+        
+        ButtonType closeButtonType = new ButtonType("Close", ButtonBar.ButtonData.CANCEL_CLOSE);
+        dialog.getDialogPane().getButtonTypes().add(closeButtonType);
+        
+        // Main container
+        VBox mainContainer = new VBox(15);
+        mainContainer.setPadding(new Insets(15));
+        mainContainer.setPrefWidth(700);
+        mainContainer.setPrefHeight(600);
+        mainContainer.setStyle("-fx-background-color: #1a1a1a;");
+        
+        // Load comments first
+        DeploymentService deploymentService = new DeploymentService();
+        
+        // Comments table using JavaFX TableView with MaterialFX styling
+        TableView<DeploymentComment> commentsTable = new TableView<>();
+        commentsTable.setPrefHeight(400);
+        commentsTable.setStyle("-fx-background-color: #2d2d2d; -fx-border-color: #404040; -fx-border-width: 1; " +
+                               "-fx-control-inner-background: #2d2d2d; -fx-table-cell-border-color: #404040;");
+        
+        // Create columns for table
+        TableColumn<DeploymentComment, String> userColumn = new TableColumn<>("User");
+        userColumn.setPrefWidth(120);
+        userColumn.setCellValueFactory(cellData -> 
+            new javafx.beans.property.SimpleStringProperty(cellData.getValue().getCreatedBy().getFullName())
+        );
+        userColumn.setCellFactory(column -> new TableCell<DeploymentComment, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item);
+                    setStyle("-fx-text-fill: #00ff85; -fx-font-weight: bold; -fx-background-color: transparent;");
+                }
+            }
+        });
+        
+        TableColumn<DeploymentComment, String> dateColumn = new TableColumn<>("Date");
+        dateColumn.setPrefWidth(140);
+        dateColumn.setCellValueFactory(cellData -> 
+            new javafx.beans.property.SimpleStringProperty(DateTimeUtil.formatForDisplay(cellData.getValue().getCreatedAt()))
+        );
+        dateColumn.setCellFactory(column -> new TableCell<DeploymentComment, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item);
+                    setStyle("-fx-text-fill: #8b8b8b; -fx-background-color: transparent;");
+                }
+            }
+        });
+        
+        TableColumn<DeploymentComment, String> commentColumn = new TableColumn<>("Comment");
+        commentColumn.setPrefWidth(420);
+        commentColumn.setCellValueFactory(cellData -> 
+            new javafx.beans.property.SimpleStringProperty(cellData.getValue().getCommentText())
+        );
+        commentColumn.setCellFactory(column -> new TableCell<DeploymentComment, String>() {
+            private final Text text = new Text();
+            
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                    setPrefHeight(35);
+                } else {
+                    text.setText(item);
+                    text.setWrappingWidth(400); // Set wrapping width
+                    text.setStyle("-fx-fill: #ffffff; -fx-font-size: 12px;");
+                    
+                    // Force text bounds calculation
+                    text.applyCss();
+                    text.autosize();
+                    
+                    // Calculate and set the row height based on text content
+                    double textHeight = text.getBoundsInLocal().getHeight();
+                    double cellHeight = Math.max(35, textHeight + 20); // Minimum 35px, plus padding
+                    setPrefHeight(cellHeight);
+                    setMaxHeight(cellHeight);
+                    
+                    setGraphic(text);
+                    setText(null);
+                    setStyle("-fx-background-color: transparent; -fx-padding: 5px;");
+                }
+            }
+        });
+        
+        commentsTable.getColumns().addAll(userColumn, dateColumn, commentColumn);
+        
+        // Set table row factory for proper row height calculation
+        commentsTable.setRowFactory(table -> {
+            TableRow<DeploymentComment> row = new TableRow<DeploymentComment>() {
+                @Override
+                protected void updateItem(DeploymentComment comment, boolean empty) {
+                    super.updateItem(comment, empty);
+                    
+                    if (empty || comment == null) {
+                        setPrefHeight(35);
+                        setStyle("-fx-background-color: transparent;");
+                    } else {
+                        // Calculate proper row height based on comment text
+                        Text measureText = new Text(comment.getCommentText());
+                        measureText.setWrappingWidth(400);
+                        measureText.applyCss();
+                        measureText.autosize();
+                        
+                        double textHeight = measureText.getBoundsInLocal().getHeight();
+                        double rowHeight = Math.max(35, textHeight + 25);
+                        setPrefHeight(rowHeight);
+                        setMaxHeight(rowHeight);
+                        
+                        // Alternate row colors for better readability
+                        if (getIndex() % 2 == 0) {
+                            setStyle("-fx-background-color: #2d2d2d;");
+                        } else {
+                            setStyle("-fx-background-color: #333333;");
+                        }
+                    }
+                }
+            };
+            return row;
+        });
+        
+        // Load and display comments
+        refreshCommentsTable(commentsTable, deployment.getId(), deploymentService);
+        
+        // Add comment section with MaterialFX components
+        VBox addCommentSection = new VBox(10);
+        addCommentSection.setPadding(new Insets(15, 0, 0, 0));
+        addCommentSection.setStyle("-fx-background-color: #2d2d2d; -fx-border-color: #404040; -fx-border-width: 1 0 0 0;");
+        
+        Label addCommentLabel = new Label("Add Comment:");
+        addCommentLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #ffffff; -fx-font-size: 14px;");
+        
+        TextArea newCommentArea = new TextArea();
+        newCommentArea.setPromptText("Enter your comment here...");
+        newCommentArea.setPrefRowCount(3);
+        newCommentArea.setWrapText(true);
+        newCommentArea.setStyle("-fx-control-inner-background: #404040; -fx-text-fill: #ffffff; " +
+                               "-fx-border-color: #555555; -fx-background-color: #404040; " +
+                               "-fx-prompt-text-fill: #8b8b8b;");
+        
+        HBox buttonBox = new HBox(10);
+        buttonBox.setStyle("-fx-alignment: center-right;");
+        
+        Button addCommentButton = new Button("Add Comment");
+        addCommentButton.setStyle("-fx-background-color: #00ff85; -fx-text-fill: #000000; -fx-font-weight: bold; " +
+                                 "-fx-background-radius: 4; -fx-border-radius: 4;");
+        
+        Button closeButton = new Button("Close");
+        closeButton.setStyle("-fx-background-color: #404040; -fx-text-fill: #ffffff; " +
+                           "-fx-background-radius: 4; -fx-border-radius: 4;");
+        closeButton.setOnAction(e -> dialog.close());
+        
+        // Add comment button action
+        addCommentButton.setOnAction(e -> {
+            String commentText = newCommentArea.getText().trim();
+            if (commentText.isEmpty()) {
+                UIUtils.showWarningDialog("Empty Comment", "Please enter a comment before adding.");
+                return;
+            }
+            
+            try {
+                deploymentService.addCommentToDeployment(deployment.getId(), commentText, currentUser);
+                newCommentArea.clear();
+                refreshCommentsTable(commentsTable, deployment.getId(), deploymentService);
+                
+                // Update dialog title with new count
+                int newCount = deploymentService.getCommentCountForDeployment(deployment.getId());
+                dialog.setTitle("Comments (" + newCount + ") - " + deployment.getReleaseName() + " " + deployment.getVersion());
+            } catch (Exception ex) {
+                UIUtils.showErrorDialog("Error Adding Comment", "Failed to add comment: " + ex.getMessage());
+            }
+        });
+        
+        // Enable/disable add button based on text
+        newCommentArea.textProperty().addListener((obs, old, newVal) -> {
+            addCommentButton.setDisable(newVal.trim().isEmpty());
+        });
+        addCommentButton.setDisable(true); // Initially disabled
+        
+        buttonBox.getChildren().addAll(addCommentButton, closeButton);
+        addCommentSection.getChildren().addAll(addCommentLabel, newCommentArea, buttonBox);
+        
+        // Assemble main container
+        int commentCount = deploymentService.getCommentCountForDeployment(deployment.getId());
+        Label commentsLabel = new Label("Comments (" + commentCount + "):");
+        commentsLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #ffffff;");
+        
+        mainContainer.getChildren().addAll(commentsLabel, commentsTable, addCommentSection);
+        
+        // Set VBox grow priorities
+        VBox.setVgrow(commentsTable, javafx.scene.layout.Priority.ALWAYS);
+        
+        dialog.getDialogPane().setContent(mainContainer);
+        dialog.getDialogPane().setStyle("-fx-background-color: #1a1a1a;");
+        
+        dialog.setResultConverter(dialogButton -> null);
+        
+        dialog.showAndWait();
+    }
+    
+    /**
+     * Refreshes the comments table with latest data.
+     */
+    private static void refreshCommentsTable(TableView<DeploymentComment> commentsTable, Long deploymentId, DeploymentService deploymentService) {
+        try {
+            commentsTable.getItems().clear();
+            commentsTable.getItems().addAll(deploymentService.getCommentsForDeployment(deploymentId));
+            
+            // Force table to recalculate row heights for text wrapping
+            commentsTable.refresh();
+        } catch (Exception e) {
+            UIUtils.showErrorDialog("Error Loading Comments", "Failed to load comments: " + e.getMessage());
+        }
     }
 }

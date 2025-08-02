@@ -7,6 +7,12 @@ import com.openteam.service.AnnouncementService;
 import com.openteam.util.DateTimeUtil;
 import com.openteam.util.DialogUtils;
 import com.openteam.util.UIUtils;
+import io.github.palexdev.materialfx.controls.MFXButton;
+import io.github.palexdev.materialfx.controls.MFXCheckbox;
+import io.github.palexdev.materialfx.controls.MFXComboBox;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -19,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.URL;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -37,12 +44,13 @@ public class AnnouncementController implements Initializable {
     @FXML private TableColumn<Announcement, String> priorityColumn;
     @FXML private TableColumn<Announcement, String> createdByColumn;
     @FXML private TableColumn<Announcement, String> createdAtColumn;
+    @FXML private TableColumn<Announcement, String> expirationDateColumn;
     @FXML private TableColumn<Announcement, String> archivedColumn;
-    @FXML private Button updateButton;
+    @FXML private MFXButton updateButton;
     @FXML private Label statusLabel;
     @FXML private TextArea contentTextArea;
     @FXML private ComboBox<Priority> priorityFilter;
-    @FXML private CheckBox showArchivedCheckBox;
+    @FXML private MFXCheckbox showArchivedCheckBox;
     @FXML private SplitPane mainSplitPane;
     
     private final AnnouncementService announcementService;
@@ -96,12 +104,41 @@ public class AnnouncementController implements Initializable {
                 DateTimeUtil.formatForDisplay(cellData.getValue().getCreatedAt())
             )
         );
+        expirationDateColumn.setCellValueFactory(cellData -> 
+            new javafx.beans.property.SimpleStringProperty(
+                cellData.getValue().getExpirationDate() != null ? 
+                    DateTimeUtil.formatForDisplay(cellData.getValue().getExpirationDate()) : "Never"
+            )
+        );
         
         archivedColumn.setCellValueFactory(cellData -> 
             new javafx.beans.property.SimpleStringProperty(
                 cellData.getValue().getIsArchived() != null && cellData.getValue().getIsArchived() ? "Yes" : "No"
             )
         );
+        
+        // Set custom cell factory for expiration date column to show colors
+        expirationDateColumn.setCellFactory(column -> new TableCell<Announcement, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(item);
+                    Announcement announcement = getTableView().getItems().get(getIndex());
+                    if (announcement.isExpired()) {
+                        setStyle("-fx-text-fill: #F44336;"); // Red for expired
+                    } else if (announcement.getExpirationDate() != null) {
+                        setStyle("-fx-text-fill: #FF9800;"); // Orange for has expiration
+                    } else {
+                        setStyle("-fx-text-fill: #4CAF50;"); // Green for never expires
+                    }
+                }
+            }
+        });
         
         // Set custom cell factory for priority column to show colors
         priorityColumn.setCellFactory(column -> new TableCell<Announcement, String>() {
@@ -138,9 +175,46 @@ public class AnnouncementController implements Initializable {
             }
         );
         
-        // Allow clicking on selected row to deselect
+        // Allow clicking on selected row to deselect and handle urgent blinking
         announcementsTable.setRowFactory(tv -> {
-            TableRow<Announcement> row = new TableRow<>();
+            TableRow<Announcement> row = new TableRow<Announcement>() {
+                private Timeline blinkTimeline;
+                
+                @Override
+                protected void updateItem(Announcement announcement, boolean empty) {
+                    super.updateItem(announcement, empty);
+                    
+                    // Stop any existing animation
+                    if (blinkTimeline != null) {
+                        blinkTimeline.stop();
+                        blinkTimeline = null;
+                    }
+                    
+                    if (empty || announcement == null) {
+                        setStyle("");
+                        getStyleClass().removeAll("urgent-row");
+                    } else {
+                        // Check if announcement is urgent
+                        boolean isUrgent = announcement.getPriority() == Priority.URGENT;
+                        
+                        if (isUrgent) {
+                            getStyleClass().add("urgent-row");
+                            // Create blinking animation for urgent announcements
+                            blinkTimeline = new Timeline(
+                                new KeyFrame(Duration.seconds(0), e -> setStyle("-fx-background-color: rgba(244, 67, 54, 0.3);")),
+                                new KeyFrame(Duration.seconds(0.75), e -> setStyle("-fx-background-color: rgba(244, 67, 54, 0.8);")),
+                                new KeyFrame(Duration.seconds(1.5), e -> setStyle("-fx-background-color: rgba(244, 67, 54, 0.3);"))
+                            );
+                            blinkTimeline.setCycleCount(Timeline.INDEFINITE);
+                            blinkTimeline.play();
+                        } else {
+                            getStyleClass().removeAll("urgent-row");
+                            setStyle("");
+                        }
+                    }
+                }
+            };
+            
             row.setOnMouseClicked(event -> {
                 if (event.getClickCount() == 1 && !row.isEmpty()) {
                     if (row.isSelected()) {
@@ -159,19 +233,21 @@ public class AnnouncementController implements Initializable {
         priorityFilter.getItems().add(null); // Add "All" option
         priorityFilter.getItems().addAll(Priority.values());
         
-        priorityFilter.setButtonCell(new ListCell<Priority>() {
-            @Override
-            protected void updateItem(Priority item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(item == null ? "All Priorities" : item.getDisplayName());
-            }
-        });
+        // Disable search functionality - make it a simple dropdown
+        priorityFilter.setEditable(false);
+        // Set prompt text instead of selecting an item to avoid green highlight
+        priorityFilter.setPromptText("All");
+        // Don't select any item initially
         
-        priorityFilter.setCellFactory(listView -> new ListCell<Priority>() {
+        priorityFilter.setConverter(new javafx.util.StringConverter<Priority>() {
             @Override
-            protected void updateItem(Priority item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(item == null ? "All Priorities" : item.getDisplayName());
+            public String toString(Priority item) {
+                return item == null ? "All Priorities" : item.getDisplayName();
+            }
+            
+            @Override
+            public Priority fromString(String string) {
+                return null;
             }
         });
         
@@ -258,6 +334,12 @@ public class AnnouncementController implements Initializable {
             updateButton.setDisable(true);
             statusLabel.setText("Loading announcements...");
 
+            // Archive expired announcements before loading
+            int archivedCount = announcementService.archiveExpiredAnnouncements();
+            if (archivedCount > 0) {
+                logger.info("Archived {} expired announcements", archivedCount);
+            }
+
             List<Announcement> announcementList = announcementService.getAllActiveAnnouncements();
             announcements.clear();
             // Remove archived announcements if checkbox is unchecked
@@ -319,6 +401,16 @@ public class AnnouncementController implements Initializable {
             content.append("Priority: ").append(announcement.getPriority().getDisplayName()).append("\n");
             content.append("Created by: ").append(announcement.getCreatedBy().getFullName()).append("\n");
             content.append("Created: ").append(DateTimeUtil.formatForDisplay(announcement.getCreatedAt())).append("\n");
+            
+            if (announcement.getExpirationDate() != null) {
+                content.append("Expires: ").append(DateTimeUtil.formatForDisplay(announcement.getExpirationDate()));
+                if (announcement.isExpired()) {
+                    content.append(" (EXPIRED)");
+                }
+                content.append("\n");
+            } else {
+                content.append("Expires: Never\n");
+            }
             
             if (!announcement.getCreatedAt().equals(announcement.getUpdatedAt())) {
                 content.append("Updated: ").append(DateTimeUtil.formatForDisplay(announcement.getUpdatedAt())).append("\n");
@@ -382,6 +474,7 @@ public class AnnouncementController implements Initializable {
                     announcement.getTitle(),
                     announcement.getContent(),
                     announcement.getPriority(),
+                    announcement.getExpirationDate(),
                     currentUser
                 );
                 
@@ -417,6 +510,7 @@ public class AnnouncementController implements Initializable {
                     announcement.getTitle(),
                     announcement.getContent(),
                     announcement.getPriority(),
+                    announcement.getExpirationDate(),
                     currentUser
                 );
                 

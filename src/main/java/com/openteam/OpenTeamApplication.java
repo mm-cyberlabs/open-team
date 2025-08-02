@@ -18,7 +18,7 @@ public class OpenTeamApplication extends Application {
     
     private static final String APPLICATION_TITLE = "Open Team Communication App";
     private static final String MAIN_FXML = "/fxml/main-view.fxml";
-    private static final String APPLICATION_CSS = "/css/futuristic-theme.css";
+    private static final String APPLICATION_CSS = "/css/materialfx-theme.css";
     private static final String APPLICATION_ICON = "/icons/openteam-logo.png";
     
     @Override

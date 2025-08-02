@@ -32,7 +32,8 @@ public class AnnouncementRepository {
      */
     public List<Announcement> findAllActive() {
         String sql = """
-            SELECT a.id, a.title, a.content, a.priority, a.created_at, a.updated_at, a.is_active,
+            SELECT a.id, a.title, a.content, a.priority, a.created_at, a.updated_at, a.is_active, 
+                   a.is_archived, a.expiration_date,
                    cu.id as created_user_id, cu.username as created_username, 
                    cu.full_name as created_full_name, cu.email as created_email,
                    uu.id as updated_user_id, uu.username as updated_username,
@@ -70,6 +71,7 @@ public class AnnouncementRepository {
     public Optional<Announcement> findById(Long id) {
         String sql = """
             SELECT a.id, a.title, a.content, a.priority, a.created_at, a.updated_at, a.is_active,
+                   a.is_archived, a.expiration_date,
                    cu.id as created_user_id, cu.username as created_username, 
                    cu.full_name as created_full_name, cu.email as created_email,
                    uu.id as updated_user_id, uu.username as updated_username,
@@ -121,6 +123,7 @@ public class AnnouncementRepository {
     public List<Announcement> findByPriority(Priority priority) {
         String sql = """
             SELECT a.id, a.title, a.content, a.priority, a.created_at, a.updated_at, a.is_active,
+                   a.is_archived, a.expiration_date,
                    cu.id as created_user_id, cu.username as created_username, 
                    cu.full_name as created_full_name, cu.email as created_email,
                    uu.id as updated_user_id, uu.username as updated_username,
@@ -177,8 +180,8 @@ public class AnnouncementRepository {
     
     private Announcement insert(Announcement announcement) {
         String sql = """
-            INSERT INTO team_comm.announcements (title, content, priority, created_by, updated_by)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO team_comm.announcements (title, content, priority, created_by, updated_by, expiration_date)
+            VALUES (?, ?, ?, ?, ?, ?)
             """;
         
         try (Connection conn = dbConnection.getConnection();
@@ -189,6 +192,13 @@ public class AnnouncementRepository {
             stmt.setString(3, announcement.getPriority().name());
             stmt.setLong(4, announcement.getCreatedBy().getId());
             stmt.setLong(5, announcement.getUpdatedBy().getId());
+            
+            // Handle expiration date (can be null)
+            if (announcement.getExpirationDate() != null) {
+                stmt.setTimestamp(6, Timestamp.valueOf(announcement.getExpirationDate()));
+            } else {
+                stmt.setNull(6, Types.TIMESTAMP);
+            }
             
             int rowsAffected = stmt.executeUpdate();
             
@@ -211,7 +221,7 @@ public class AnnouncementRepository {
     private Announcement update(Announcement announcement) {
         String sql = """
             UPDATE team_comm.announcements 
-            SET title = ?, content = ?, priority = ?, updated_by = ?
+            SET title = ?, content = ?, priority = ?, updated_by = ?, expiration_date = ?
             WHERE id = ?
             """;
         
@@ -222,7 +232,15 @@ public class AnnouncementRepository {
             stmt.setString(2, announcement.getContent());
             stmt.setString(3, announcement.getPriority().name());
             stmt.setLong(4, announcement.getUpdatedBy().getId());
-            stmt.setLong(5, announcement.getId());
+            
+            // Handle expiration date (can be null)
+            if (announcement.getExpirationDate() != null) {
+                stmt.setTimestamp(5, Timestamp.valueOf(announcement.getExpirationDate()));
+            } else {
+                stmt.setNull(5, Types.TIMESTAMP);
+            }
+            
+            stmt.setLong(6, announcement.getId());
             
             int rowsAffected = stmt.executeUpdate();
             
@@ -237,6 +255,37 @@ public class AnnouncementRepository {
         return announcement;
     }
     
+    /**
+     * Archives all expired announcements by setting is_archived = true.
+     * @return Number of announcements archived
+     */
+    public int archiveExpiredAnnouncements() {
+        String sql = """
+            UPDATE team_comm.announcements 
+            SET is_archived = true, updated_at = CURRENT_TIMESTAMP
+            WHERE expiration_date IS NOT NULL 
+              AND expiration_date < CURRENT_TIMESTAMP 
+              AND is_archived = false 
+              AND is_active = true
+            """;
+        
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            int rowsAffected = stmt.executeUpdate();
+            
+            if (rowsAffected > 0) {
+                logger.info("Archived {} expired announcements", rowsAffected);
+            }
+            
+            return rowsAffected;
+            
+        } catch (SQLException e) {
+            logger.error("Error archiving expired announcements", e);
+            return 0;
+        }
+    }
+    
     private Announcement mapResultSetToAnnouncement(ResultSet rs) throws SQLException {
         Announcement announcement = new Announcement();
         announcement.setId(rs.getLong("id"));
@@ -246,6 +295,13 @@ public class AnnouncementRepository {
         announcement.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
         announcement.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
         announcement.setIsActive(rs.getBoolean("is_active"));
+        announcement.setIsArchived(rs.getBoolean("is_archived"));
+        
+        // Handle expiration date (can be null)
+        Timestamp expirationTimestamp = rs.getTimestamp("expiration_date");
+        if (expirationTimestamp != null) {
+            announcement.setExpirationDate(expirationTimestamp.toLocalDateTime());
+        }
         
         // Map created by user
         User createdBy = new User();

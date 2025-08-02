@@ -67,6 +67,30 @@ public class AnnouncementService {
     }
     
     /**
+     * Creates a new announcement with expiration date.
+     * 
+     * @param title Announcement title
+     * @param content Announcement content
+     * @param priority Announcement priority
+     * @param expirationDate Expiration date (null for no expiration)
+     * @param createdBy User creating the announcement
+     * @return Created announcement
+     */
+    public Announcement createAnnouncement(String title, String content, Priority priority, 
+                                         LocalDateTime expirationDate, User createdBy) {
+        logger.info("Creating new announcement with expiration: {}", title);
+        
+        validateAnnouncementData(title, content, createdBy);
+        
+        Announcement announcement = new Announcement(title, content, priority, createdBy);
+        announcement.setExpirationDate(expirationDate);
+        announcement.setCreatedAt(LocalDateTime.now());
+        announcement.setUpdatedAt(LocalDateTime.now());
+        
+        return announcementRepository.save(announcement);
+    }
+    
+    /**
      * Updates an existing announcement.
      * 
      * @param id Announcement ID
@@ -92,6 +116,40 @@ public class AnnouncementService {
         existing.setTitle(title);
         existing.setContent(content);
         existing.setPriority(priority);
+        existing.setUpdatedBy(updatedBy);
+        existing.setUpdatedAt(LocalDateTime.now());
+        
+        return announcementRepository.save(existing);
+    }
+    
+    /**
+     * Updates an existing announcement with expiration date.
+     * 
+     * @param id Announcement ID
+     * @param title New title
+     * @param content New content
+     * @param priority New priority
+     * @param expirationDate New expiration date (null for no expiration)
+     * @param updatedBy User updating the announcement
+     * @return Updated announcement
+     * @throws IllegalArgumentException if announcement not found
+     */
+    public Announcement updateAnnouncement(Long id, String title, String content, 
+                                         Priority priority, LocalDateTime expirationDate, User updatedBy) {
+        logger.info("Updating announcement with expiration, ID: {}", id);
+        
+        validateAnnouncementData(title, content, updatedBy);
+        
+        Optional<Announcement> existingOpt = announcementRepository.findById(id);
+        if (existingOpt.isEmpty()) {
+            throw new IllegalArgumentException("Announcement not found with ID: " + id);
+        }
+        
+        Announcement existing = existingOpt.get();
+        existing.setTitle(title);
+        existing.setContent(content);
+        existing.setPriority(priority);
+        existing.setExpirationDate(expirationDate);
         existing.setUpdatedBy(updatedBy);
         existing.setUpdatedAt(LocalDateTime.now());
         
@@ -139,6 +197,17 @@ public class AnnouncementService {
         return highPriority.stream()
                 .sorted((a1, a2) -> a2.getCreatedAt().compareTo(a1.getCreatedAt()))
                 .toList();
+    }
+    
+    /**
+     * Archives all expired announcements.
+     * This method should be called periodically to automatically archive announcements that have passed their expiration date.
+     * 
+     * @return Number of announcements that were archived
+     */
+    public int archiveExpiredAnnouncements() {
+        logger.info("Archiving expired announcements");
+        return announcementRepository.archiveExpiredAnnouncements();
     }
     
     /**

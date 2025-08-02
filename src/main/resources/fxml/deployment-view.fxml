@@ -2,6 +2,7 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import io.github.palexdev.materialfx.controls.*?>
 
 <VBox fx:id="rootContainer" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.DeploymentController">
    <children>
@@ -9,10 +10,13 @@
          <children>
             <Label styleClass="view-title" text="Software Deployments" />
             <Region HBox.hgrow="ALWAYS" />
-            <TextField fx:id="searchField" prefWidth="200.0" promptText="Search deployments..." />
-            <CheckBox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
-            <ComboBox fx:id="environmentFilter" prefWidth="150.0" promptText="Filter by Environment" />
-            <ComboBox fx:id="statusFilter" prefWidth="150.0" promptText="Filter by Status" />
+            <Label text="Search:" styleClass="filter-label" />
+            <MFXTextField fx:id="searchField" prefWidth="200.0"  styleClass="mfx-text-field" />
+            <Label text="Environment:" styleClass="filter-label" />
+            <ComboBox fx:id="environmentFilter" prefWidth="150.0" styleClass="combo-box" promptText="All" />
+            <Label text="Status:" styleClass="filter-label" />
+            <ComboBox fx:id="statusFilter" prefWidth="150.0" styleClass="combo-box" promptText="All" />
+            <MFXCheckbox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
          </children>
       </HBox>
       
@@ -30,17 +34,18 @@
                         <TableColumn fx:id="deploymentDateColumn" prefWidth="130.0" text="Deployment Date" />
                         <TableColumn fx:id="driverColumn" prefWidth="120.0" text="Driver" />
                         <TableColumn fx:id="documentationColumn" prefWidth="120.0" text="Documentation" />
+                        <TableColumn fx:id="commentsColumn" prefWidth="100.0" text="Comments" />
                         <TableColumn fx:id="archivedColumn" prefWidth="80.0" text="Archived" />
                      </columns>
                   </TableView>
                   <HBox styleClass="button-bar">
                      <children>
-                        <Button onAction="#createDeployment" styleClass="toolbar-button" text="Add New" />
-                        <Button onAction="#editDeployment" styleClass="toolbar-button" text="Edit" />
-                        <Button onAction="#deleteDeployment" styleClass="toolbar-button" text="Delete" />
-                        <Button onAction="#unarchiveDeployment" styleClass="toolbar-button" text="Unarchive" />
+                        <MFXButton onAction="#createDeployment" styleClass="toolbar-button" text="Add New" />
+                        <MFXButton onAction="#editDeployment" styleClass="toolbar-button" text="Edit" />
+                        <MFXButton onAction="#deleteDeployment" styleClass="toolbar-button" text="Delete" />
+                        <MFXButton onAction="#unarchiveDeployment" styleClass="toolbar-button" text="Unarchive" />
                         <Region HBox.hgrow="ALWAYS" />
-                        <Button onAction="#clearSelection" text="Clear Selection" />
+                        <MFXButton onAction="#clearSelection" text="Clear Selection" />
                      </children>
                   </HBox>
                </children>

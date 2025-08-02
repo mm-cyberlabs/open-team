@@ -18,6 +18,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javafx.version>21</javafx.version>
+        <materialfx.version>11.17.0</materialfx.version>
         <postgresql.version>42.7.1</postgresql.version>
         <jackson.version>2.16.1</jackson.version>
         <hikari.version>5.1.0</hikari.version>
@@ -36,6 +37,13 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
             <version>${javafx.version}</version>
+        </dependency>
+        
+        <!-- MaterialFX -->
+        <dependency>
+            <groupId>io.github.palexdev</groupId>
+            <artifactId>materialfx</artifactId>
+            <version>${materialfx.version}</version>
         </dependency>
         
         <!-- Database -->

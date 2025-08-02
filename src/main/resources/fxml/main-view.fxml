@@ -3,6 +3,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.image.*?>
+<?import io.github.palexdev.materialfx.controls.*?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.MainController">
    <top>
@@ -25,8 +26,8 @@
             <Region HBox.hgrow="ALWAYS" />
             <HBox styleClass="top-toolbar" spacing="5">
                <children>
-                  <Button onAction="#refreshCurrentView" styleClass="toolbar-button" text="🔄 Refresh" />
-                  <Button onAction="#showAbout" styleClass="toolbar-button" text="ℹ️ About" />
+                  <MFXButton onAction="#refreshCurrentView" styleClass="toolbar-button" text="🔄 Refresh" />
+                  <MFXButton onAction="#showAbout" styleClass="toolbar-button" text="ℹ️ About" />
                </children>
             </HBox>
          </children>

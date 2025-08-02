@@ -16,6 +16,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
+import io.github.palexdev.materialfx.controls.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,13 +42,14 @@ public class DeploymentController implements Initializable {
     @FXML private TableColumn<Deployment, String> deploymentDateColumn;
     @FXML private TableColumn<Deployment, String> driverColumn;
     @FXML private TableColumn<Deployment, String> documentationColumn;
+    @FXML private TableColumn<Deployment, String> commentsColumn;
     @FXML private TableColumn<Deployment, String> archivedColumn;
     @FXML private Label statusLabel;
     @FXML private TextArea releaseNotesTextArea;
     @FXML private ComboBox<Environment> environmentFilter;
     @FXML private ComboBox<DeploymentStatus> statusFilter;
-    @FXML private CheckBox showArchivedCheckBox;
-    @FXML private TextField searchField;
+    @FXML private MFXCheckbox showArchivedCheckBox;
+    @FXML private MFXTextField searchField;
     @FXML private SplitPane mainSplitPane;
     
     private final DeploymentService deploymentService;
@@ -115,6 +117,12 @@ public class DeploymentController implements Initializable {
                 cellData.getValue().getDocumentationUrl() != null && !cellData.getValue().getDocumentationUrl().isEmpty() ? "View Docs" : ""
             )
         );
+        
+        commentsColumn.setCellValueFactory(cellData -> {
+            Deployment deployment = cellData.getValue();
+            int commentCount = deploymentService.getCommentCountForDeployment(deployment.getId());
+            return new javafx.beans.property.SimpleStringProperty(commentCount > 0 ? "Comments (" + commentCount + ")" : "Add Comment");
+        });
         
         archivedColumn.setCellValueFactory(cellData -> 
             new javafx.beans.property.SimpleStringProperty(
@@ -186,6 +194,28 @@ public class DeploymentController implements Initializable {
             }
         });
         
+        // Comments column with clickable link
+        commentsColumn.setCellFactory(column -> new TableCell<Deployment, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                
+                if (empty || item == null || item.isEmpty()) {
+                    setText(null);
+                    setStyle("");
+                    setOnMouseClicked(null);
+                    setCursor(null);
+                } else {
+                    setText(item);
+                    Deployment deployment = getTableView().getItems().get(getIndex());
+                    
+                    setStyle("-fx-text-fill: #0066cc; -fx-underline: true;");
+                    setCursor(javafx.scene.Cursor.HAND);
+                    setOnMouseClicked(event -> showCommentsDialog(deployment));
+                }
+            }
+        });
+        
         deploymentsTable.setItems(deployments);
         
         // Prevent extra empty columns from appearing
@@ -218,22 +248,27 @@ public class DeploymentController implements Initializable {
     
     private void setupFilters() {
         // Environment filter
+        logger.debug("Setting up environment filter with {} items", Environment.values().length);
         environmentFilter.getItems().add(null);
         environmentFilter.getItems().addAll(Environment.values());
         
-        environmentFilter.setButtonCell(new ListCell<Environment>() {
-            @Override
-            protected void updateItem(Environment item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(item == null ? "All Environments" : item.getDisplayName());
-            }
-        });
+        // Configure as simple dropdown
+        environmentFilter.setEditable(false);
+        logger.debug("Environment filter items: {}", environmentFilter.getItems());
         
-        environmentFilter.setCellFactory(listView -> new ListCell<Environment>() {
+        // Set prompt text instead of selecting an item to avoid green highlight
+        environmentFilter.setPromptText("All");
+        // Don't select any item initially
+        
+        environmentFilter.setConverter(new javafx.util.StringConverter<Environment>() {
             @Override
-            protected void updateItem(Environment item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(item == null ? "All Environments" : item.getDisplayName());
+            public String toString(Environment item) {
+                return item == null ? "All" : item.getDisplayName();
+            }
+            
+            @Override
+            public Environment fromString(String string) {
+                return null;
             }
         });
         
@@ -245,19 +280,21 @@ public class DeploymentController implements Initializable {
         statusFilter.getItems().add(null);
         statusFilter.getItems().addAll(DeploymentStatus.values());
         
-        statusFilter.setButtonCell(new ListCell<DeploymentStatus>() {
-            @Override
-            protected void updateItem(DeploymentStatus item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(item == null ? "All Statuses" : item.getDisplayName());
-            }
-        });
+        // Configure as simple dropdown
+        statusFilter.setEditable(false);
+        // Set prompt text instead of selecting an item to avoid green highlight
+        statusFilter.setPromptText("All");
+        // Don't select any item initially
         
-        statusFilter.setCellFactory(listView -> new ListCell<DeploymentStatus>() {
+        statusFilter.setConverter(new javafx.util.StringConverter<DeploymentStatus>() {
             @Override
-            protected void updateItem(DeploymentStatus item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(item == null ? "All Statuses" : item.getDisplayName());
+            public String toString(DeploymentStatus item) {
+                return item == null ? "All" : item.getDisplayName();
+            }
+            
+            @Override
+            public DeploymentStatus fromString(String string) {
+                return null;
             }
         });
         
@@ -312,26 +349,28 @@ public class DeploymentController implements Initializable {
         // Adjust column widths proportionally
         if (availableTableWidth > 800) {
             // Full width - expand columns
-            releaseNameColumn.setPrefWidth(150);
-            versionColumn.setPrefWidth(80);
-            ticketNumberColumn.setPrefWidth(100);
-            environmentColumn.setPrefWidth(100);
-            statusColumn.setPrefWidth(100);
-            deploymentDateColumn.setPrefWidth(130);
-            driverColumn.setPrefWidth(120);
-            documentationColumn.setPrefWidth(120);
-            archivedColumn.setPrefWidth(80);
+            releaseNameColumn.setPrefWidth(140);
+            versionColumn.setPrefWidth(70);
+            ticketNumberColumn.setPrefWidth(90);
+            environmentColumn.setPrefWidth(90);
+            statusColumn.setPrefWidth(90);
+            deploymentDateColumn.setPrefWidth(120);
+            driverColumn.setPrefWidth(110);
+            documentationColumn.setPrefWidth(110);
+            commentsColumn.setPrefWidth(100);
+            archivedColumn.setPrefWidth(70);
         } else {
             // Compressed width - shrink columns
-            releaseNameColumn.setPrefWidth(120);
-            versionColumn.setPrefWidth(70);
-            ticketNumberColumn.setPrefWidth(80);
-            environmentColumn.setPrefWidth(80);
-            statusColumn.setPrefWidth(80);
-            deploymentDateColumn.setPrefWidth(110);
-            driverColumn.setPrefWidth(100);
-            documentationColumn.setPrefWidth(100);
-            archivedColumn.setPrefWidth(70);
+            releaseNameColumn.setPrefWidth(110);
+            versionColumn.setPrefWidth(60);
+            ticketNumberColumn.setPrefWidth(70);
+            environmentColumn.setPrefWidth(70);
+            statusColumn.setPrefWidth(70);
+            deploymentDateColumn.setPrefWidth(100);
+            driverColumn.setPrefWidth(90);
+            documentationColumn.setPrefWidth(90);
+            commentsColumn.setPrefWidth(80);
+            archivedColumn.setPrefWidth(60);
         }
         
         // Force table to refresh layout
@@ -596,5 +635,22 @@ public class DeploymentController implements Initializable {
                     "Failed to delete deployment: " + e.getMessage());
             }
         }
+    }
+    
+    /**
+     * Shows the comments dialog for a deployment.
+     * 
+     * @param deployment The deployment to show comments for
+     */
+    private void showCommentsDialog(Deployment deployment) {
+        if (deployment == null) {
+            return;
+        }
+        
+        logger.info("Showing comments dialog for deployment: {} v{}", deployment.getReleaseName(), deployment.getVersion());
+        DialogUtils.showDeploymentCommentsDialog(deployment, currentUser);
+        
+        // Refresh the table to update comment counts
+        performSearch();
     }
 }

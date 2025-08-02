@@ -33,6 +33,12 @@ public class DatabaseMigrationUtil {
             // Deployment specific columns
             addDeploymentColumnsIfNotExists();
             
+            // Announcement specific columns
+            addAnnouncementColumnsIfNotExists();
+            
+            // Deployment comments table
+            addDeploymentCommentsTableIfNotExists();
+            
             logger.info("Columns migration completed successfully");
         } catch (Exception e) {
             logger.error("Error during columns migration", e);
@@ -98,6 +104,74 @@ public class DatabaseMigrationUtil {
     }
     
     /**
+     * Adds expiration_date column to announcements table if it doesn't exist.
+     */
+    private static void addAnnouncementColumnsIfNotExists() {
+        try (Connection conn = dbConnection.getConnection()) {
+            // Add expiration_date column
+            if (!columnExists(conn, "announcements", "expiration_date")) {
+                logger.info("Adding expiration_date column to announcements table");
+                
+                String sql = "ALTER TABLE team_comm.announcements " + 
+                           "ADD COLUMN expiration_date TIMESTAMP WITH TIME ZONE";
+                
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.executeUpdate();
+                    logger.info("Successfully added expiration_date column to announcements");
+                }
+            } else {
+                logger.debug("Column expiration_date already exists in announcements table");
+            }
+            
+        } catch (SQLException e) {
+            logger.error("Error adding announcement columns", e);
+        }
+    }
+    
+    /**
+     * Creates deployment_comments table if it doesn't exist.
+     */
+    private static void addDeploymentCommentsTableIfNotExists() {
+        try (Connection conn = dbConnection.getConnection()) {
+            // Check if table exists
+            if (!tableExists(conn, "deployment_comments")) {
+                logger.info("Creating deployment_comments table");
+                
+                String sql = """
+                    CREATE TABLE team_comm.deployment_comments (
+                        id BIGSERIAL PRIMARY KEY,
+                        deployment_id BIGINT NOT NULL REFERENCES team_comm.deployments(id) ON DELETE CASCADE,
+                        comment_text TEXT NOT NULL,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                        created_by BIGINT REFERENCES team_comm.users(id)
+                    )
+                    """;
+                
+                try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+                    stmt.executeUpdate();
+                    logger.info("Successfully created deployment_comments table");
+                }
+                
+                // Create indexes
+                String indexSql1 = "CREATE INDEX idx_deployment_comments_deployment_id ON team_comm.deployment_comments(deployment_id)";
+                String indexSql2 = "CREATE INDEX idx_deployment_comments_created_at ON team_comm.deployment_comments(created_at DESC)";
+                
+                try (PreparedStatement stmt1 = conn.prepareStatement(indexSql1);
+                     PreparedStatement stmt2 = conn.prepareStatement(indexSql2)) {
+                    stmt1.executeUpdate();
+                    stmt2.executeUpdate();
+                    logger.info("Successfully created indexes for deployment_comments table");
+                }
+            } else {
+                logger.debug("Table deployment_comments already exists");
+            }
+            
+        } catch (SQLException e) {
+            logger.error("Error creating deployment_comments table", e);
+        }
+    }
+    
+    /**
      * Adds is_archived column to a table if it doesn't exist.
      */
     private static void addArchiveColumnIfNotExists(String tableName) {
@@ -152,6 +226,28 @@ public class DatabaseMigrationUtil {
             }
         } catch (SQLException e) {
             logger.error("Error checking if column exists: {} in table: {}", columnName, tableName, e);
+            return false;
+        }
+    }
+    
+    /**
+     * Checks if a table exists in the team_comm schema.
+     */
+    private static boolean tableExists(Connection conn, String tableName) {
+        String sql = """
+            SELECT 1 FROM information_schema.tables 
+            WHERE table_schema = 'team_comm' 
+            AND table_name = ?
+            """;
+        
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, tableName);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            logger.error("Error checking if table exists: {}", tableName, e);
             return false;
         }
     }

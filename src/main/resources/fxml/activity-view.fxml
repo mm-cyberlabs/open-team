@@ -2,6 +2,7 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import io.github.palexdev.materialfx.controls.*?>
 
 <VBox fx:id="rootContainer" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.ActivityController">
    <children>
@@ -9,11 +10,11 @@
          <children>
             <Label styleClass="view-title" text="Team Activities" />
             <Region HBox.hgrow="ALWAYS" />
-            <CheckBox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
-            <ComboBox fx:id="typeFilter" prefWidth="150.0" promptText="Filter by Type" />
-            <Button onAction="#showUpcoming" styleClass="toolbar-button" text="Upcoming" />
-            <Button onAction="#showToday" styleClass="toolbar-button" text="Today" />
-            <Button fx:id="updateButton" styleClass="update-button" text="Update" />
+            <MFXCheckbox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
+            <MFXComboBox fx:id="typeFilter" prefWidth="150.0" promptText="Filter by Type" />
+            <MFXButton onAction="#showUpcoming" styleClass="toolbar-button" text="Upcoming" />
+            <MFXButton onAction="#showToday" styleClass="toolbar-button" text="Today" />
+            <MFXButton fx:id="updateButton" styleClass="update-button" text="Update" />
          </children>
       </HBox>
       
@@ -33,11 +34,11 @@
                   </TableView>
                   <HBox styleClass="button-bar">
                      <children>
-                        <Button onAction="#createActivity" styleClass="toolbar-button" text="Add New" />
-                        <Button onAction="#editActivity" styleClass="toolbar-button" text="Edit" />
-                        <Button onAction="#deleteActivity" styleClass="toolbar-button" text="Delete" />
+                        <MFXButton onAction="#createActivity" styleClass="toolbar-button" text="Add New" />
+                        <MFXButton onAction="#editActivity" styleClass="toolbar-button" text="Edit" />
+                        <MFXButton onAction="#deleteActivity" styleClass="toolbar-button" text="Delete" />
                         <Region HBox.hgrow="ALWAYS" />
-                        <Button onAction="#clearSelection" text="Clear Selection" />
+                        <MFXButton onAction="#clearSelection" text="Clear Selection" />
                      </children>
                   </HBox>
                </children>

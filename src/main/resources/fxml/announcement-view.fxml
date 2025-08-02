@@ -2,6 +2,7 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import io.github.palexdev.materialfx.controls.*?>
 
 <VBox fx:id="rootContainer" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.AnnouncementController">
    <children>
@@ -9,10 +10,10 @@
          <children>
             <Label styleClass="view-title" text="Team Announcements" />
             <Region HBox.hgrow="ALWAYS" />
-            <CheckBox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
-            <ComboBox fx:id="priorityFilter" prefWidth="150.0" promptText="Filter by Priority" />
-            <Button onAction="#showHighPriority" styleClass="toolbar-button" text="High Priority" />
-            <Button fx:id="updateButton" styleClass="update-button" text="Update" />
+            <MFXCheckbox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
+            <ComboBox fx:id="priorityFilter" prefWidth="150.0" promptText="All" styleClass="combo-box" />
+            <MFXButton onAction="#showHighPriority" styleClass="toolbar-button" text="High Priority" />
+            <MFXButton fx:id="updateButton" styleClass="update-button" text="Update" />
          </children>
       </HBox>
       
@@ -20,22 +21,23 @@
          <items>
             <VBox>
                <children>
-                  <TableView fx:id="announcementsTable" VBox.vgrow="ALWAYS">
+                  <TableView fx:id="announcementsTable" styleClass="mfx-table-view" VBox.vgrow="ALWAYS">
                      <columns>
                         <TableColumn fx:id="titleColumn" prefWidth="250.0" text="Title" />
                         <TableColumn fx:id="priorityColumn" prefWidth="80.0" text="Priority" />
                         <TableColumn fx:id="createdByColumn" prefWidth="120.0" text="Created By" />
                         <TableColumn fx:id="createdAtColumn" prefWidth="130.0" text="Created" />
+                        <TableColumn fx:id="expirationDateColumn" prefWidth="130.0" text="Expires" />
                         <TableColumn fx:id="archivedColumn" prefWidth="80.0" text="Archived" />
                      </columns>
                   </TableView>
                   <HBox styleClass="button-bar">
                      <children>
-                        <Button onAction="#createAnnouncement" styleClass="toolbar-button" text="Add New" />
-                        <Button onAction="#editAnnouncement" styleClass="toolbar-button" text="Edit" />
-                        <Button onAction="#deleteAnnouncement" styleClass="toolbar-button" text="Delete" />
+                        <MFXButton onAction="#createAnnouncement" styleClass="toolbar-button" text="Add New" />
+                        <MFXButton onAction="#editAnnouncement" styleClass="toolbar-button" text="Edit" />
+                        <MFXButton onAction="#deleteAnnouncement" styleClass="toolbar-button" text="Delete" />
                         <Region HBox.hgrow="ALWAYS" />
-                        <Button onAction="#clearSelection" text="Clear Selection" />
+                        <MFXButton onAction="#clearSelection" text="Clear Selection" />
                      </children>
                   </HBox>
                </children>
