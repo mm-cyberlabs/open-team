@@ -74,7 +74,7 @@ public class TargetDateService {
         
         validateTargetDateData(projectName, taskName, targetDate, driverUser, createdBy);
         
-        TargetDate targetDateEntity = new TargetDate(projectName, taskName, targetDate,
+        TargetDate targetDateEntity = new TargetDate(createdBy.getWorkspace(), projectName, taskName, targetDate,
                                                    driverUser, documentationUrl, status, createdBy);
         targetDateEntity.setCreatedAt(LocalDateTime.now());
         targetDateEntity.setUpdatedAt(LocalDateTime.now());
@@ -349,5 +349,31 @@ public class TargetDateService {
         if (user == null || user.getId() == null) {
             throw new IllegalArgumentException("Valid user is required for target date operations");
         }
+    }
+    
+    /**
+     * Searches target dates by workspace with optional search term and archive filter.
+     * 
+     * @param searchTerm Search term (can be null or empty for all results)
+     * @param includeArchived Whether to include archived target dates
+     * @param workspaceId Workspace ID to filter by
+     * @return List of matching target dates for the workspace
+     */
+    public List<TargetDate> searchTargetDatesByWorkspace(String searchTerm, boolean includeArchived, Long workspaceId) {
+        logger.debug("Searching target dates for workspace: {}, searchTerm: '{}', includeArchived: {}", 
+                    workspaceId, searchTerm, includeArchived);
+        return targetDateRepository.searchByWorkspace(searchTerm, includeArchived, workspaceId);
+    }
+    
+    /**
+     * Retrieves target dates by status and workspace.
+     * 
+     * @param status Target date status to filter by
+     * @param workspaceId Workspace ID to filter by
+     * @return List of target dates with specified status for the workspace
+     */
+    public List<TargetDate> getTargetDatesByStatusAndWorkspace(TargetDateStatus status, Long workspaceId) {
+        logger.debug("Retrieving target dates with status: {} for workspace: {}", status, workspaceId);
+        return targetDateRepository.findByStatusAndWorkspace(status, workspaceId);
     }
 }

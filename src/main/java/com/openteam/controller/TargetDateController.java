@@ -46,27 +46,41 @@ public class TargetDateController implements Initializable {
     @FXML private Label statusLabel;
     @FXML private TextArea detailsTextArea;
     @FXML private ComboBox<TargetDateStatus> statusFilter;
-    @FXML private MFXCheckbox showArchivedCheckBox;
-    @FXML private MFXTextField searchField;
+    @FXML private CheckBox showArchivedCheckBox;
+    @FXML private TextField searchField;
     @FXML private SplitPane mainSplitPane;
     
     private final TargetDateService targetDateService;
     private final ObservableList<TargetDate> targetDates;
-    private final User currentUser;
+    private User currentUser;
     
     public TargetDateController() {
         this.targetDateService = new TargetDateService();
         this.targetDates = FXCollections.observableArrayList();
-        this.currentUser = createDefaultUser();
     }
     
-    private User createDefaultUser() {
-        User user = new User();
-        user.setId(1L);
-        user.setUsername("admin");
-        user.setFullName("System Administrator");
-        user.setEmail("admin@company.com");
-        return user;
+    /**
+     * Sets the current user for this controller.
+     * This should be called after login to establish the user context.
+     */
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+    }
+    
+    /**
+     * Gets the current user, falling back to session if not set.
+     */
+    private User getCurrentUser() {
+        if (currentUser != null) {
+            return currentUser;
+        }
+        
+        // Try to get from session
+        if (LoginController.UserSession.isLoggedIn()) {
+            return LoginController.UserSession.getCurrentUser();
+        }
+        
+        throw new IllegalStateException("No current user available. User must be logged in.");
     }
     
     @Override
@@ -357,7 +371,16 @@ public class TargetDateController implements Initializable {
             String searchTerm = searchField.getText();
             boolean includeArchived = showArchivedCheckBox.isSelected();
             
-            List<TargetDate> targetDateList = targetDateService.searchTargetDates(searchTerm, includeArchived);
+            User user = getCurrentUser();
+            List<TargetDate> targetDateList;
+            
+            if (user.isSuperAdmin()) {
+                // SUPER_ADMIN can see all target dates across all workspaces
+                targetDateList = targetDateService.searchTargetDates(searchTerm, includeArchived);
+            } else {
+                // Regular users see only their workspace target dates
+                targetDateList = targetDateService.searchTargetDatesByWorkspace(searchTerm, includeArchived, user.getWorkspace().getId());
+            }
             
             targetDates.clear();
             targetDates.addAll(targetDateList);
@@ -387,7 +410,17 @@ public class TargetDateController implements Initializable {
             if (status == null) {
                 loadTargetDates();
             } else {
-                List<TargetDate> filtered = targetDateService.getTargetDatesByStatus(status);
+                User user = getCurrentUser();
+                List<TargetDate> filtered;
+                
+                if (user.isSuperAdmin()) {
+                    // SUPER_ADMIN can see all target dates by status across all workspaces
+                    filtered = targetDateService.getTargetDatesByStatus(status);
+                } else {
+                    // Regular users see only their workspace target dates by status
+                    filtered = targetDateService.getTargetDatesByStatusAndWorkspace(status, user.getWorkspace().getId());
+                }
+                
                 targetDates.clear();
                 targetDates.addAll(filtered);
                 statusLabel.setText("Showing " + filtered.size() + " " + 
@@ -464,7 +497,8 @@ public class TargetDateController implements Initializable {
     
     @FXML
     private void createTargetDate() {
-        Optional<TargetDate> result = DialogUtils.showTargetDateDialog(null, currentUser);
+        User user = getCurrentUser();
+        Optional<TargetDate> result = DialogUtils.showTargetDateDialog(null, user);
         
         result.ifPresent(targetDate -> {
             try {
@@ -475,7 +509,7 @@ public class TargetDateController implements Initializable {
                     targetDate.getDriverUser(),
                     targetDate.getDocumentationUrl(),
                     targetDate.getStatus(),
-                    currentUser
+                    user
                 );
                 
                 refreshData();
@@ -498,7 +532,8 @@ public class TargetDateController implements Initializable {
             return;
         }
         
-        Optional<TargetDate> result = DialogUtils.showTargetDateDialog(selected, currentUser);
+        User user = getCurrentUser();
+        Optional<TargetDate> result = DialogUtils.showTargetDateDialog(selected, user);
         
         result.ifPresent(targetDate -> {
             try {
@@ -510,7 +545,7 @@ public class TargetDateController implements Initializable {
                     targetDate.getDriverUser(),
                     targetDate.getDocumentationUrl(),
                     targetDate.getStatus(),
-                    currentUser
+                    user
                 );
                 
                 refreshData();

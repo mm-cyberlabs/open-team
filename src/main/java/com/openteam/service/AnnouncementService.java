@@ -59,7 +59,7 @@ public class AnnouncementService {
         
         validateAnnouncementData(title, content, createdBy);
         
-        Announcement announcement = new Announcement(title, content, priority, createdBy);
+        Announcement announcement = new Announcement(createdBy.getWorkspace(), title, content, priority, createdBy);
         announcement.setCreatedAt(LocalDateTime.now());
         announcement.setUpdatedAt(LocalDateTime.now());
         
@@ -82,7 +82,7 @@ public class AnnouncementService {
         
         validateAnnouncementData(title, content, createdBy);
         
-        Announcement announcement = new Announcement(title, content, priority, createdBy);
+        Announcement announcement = new Announcement(createdBy.getWorkspace(), title, content, priority, createdBy);
         announcement.setExpirationDate(expirationDate);
         announcement.setCreatedAt(LocalDateTime.now());
         announcement.setUpdatedAt(LocalDateTime.now());
@@ -208,6 +208,47 @@ public class AnnouncementService {
     public int archiveExpiredAnnouncements() {
         logger.info("Archiving expired announcements");
         return announcementRepository.archiveExpiredAnnouncements();
+    }
+    
+    /**
+     * Retrieves announcements by workspace.
+     * 
+     * @param workspaceId Workspace ID to filter by
+     * @param activeOnly Whether to only include active (non-archived) announcements
+     * @return List of announcements for the workspace
+     */
+    public List<Announcement> getAnnouncementsByWorkspace(Long workspaceId, boolean activeOnly) {
+        logger.debug("Retrieving announcements for workspace: {}, activeOnly: {}", workspaceId, activeOnly);
+        return announcementRepository.findByWorkspace(workspaceId, activeOnly);
+    }
+    
+    /**
+     * Retrieves announcements by priority and workspace.
+     * 
+     * @param priority Priority to filter by
+     * @param workspaceId Workspace ID to filter by
+     * @return List of announcements with specified priority for the workspace
+     */
+    public List<Announcement> getAnnouncementsByPriorityAndWorkspace(Priority priority, Long workspaceId) {
+        logger.debug("Retrieving announcements with priority: {} for workspace: {}", priority, workspaceId);
+        return announcementRepository.findByPriorityAndWorkspace(priority, workspaceId);
+    }
+    
+    /**
+     * Retrieves high priority announcements (HIGH and URGENT) for a workspace.
+     * 
+     * @param workspaceId Workspace ID to filter by
+     * @return List of high priority announcements for the workspace
+     */
+    public List<Announcement> getHighPriorityAnnouncementsByWorkspace(Long workspaceId) {
+        logger.debug("Retrieving high priority announcements for workspace: {}", workspaceId);
+        List<Announcement> highPriority = announcementRepository.findByPriorityAndWorkspace(Priority.HIGH, workspaceId);
+        List<Announcement> urgent = announcementRepository.findByPriorityAndWorkspace(Priority.URGENT, workspaceId);
+        
+        highPriority.addAll(urgent);
+        return highPriority.stream()
+                .sorted((a1, a2) -> a2.getCreatedAt().compareTo(a1.getCreatedAt()))
+                .toList();
     }
     
     /**

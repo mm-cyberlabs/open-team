@@ -3,6 +3,7 @@ package com.openteam.repository;
 import com.openteam.model.Announcement;
 import com.openteam.model.Priority;
 import com.openteam.model.User;
+import com.openteam.model.Workspace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,11 +73,13 @@ public class AnnouncementRepository {
         String sql = """
             SELECT a.id, a.title, a.content, a.priority, a.created_at, a.updated_at, a.is_active,
                    a.is_archived, a.expiration_date,
+                   w.id as workspace_id, w.name as workspace_name, w.description as workspace_description,
                    cu.id as created_user_id, cu.username as created_username, 
                    cu.full_name as created_full_name, cu.email as created_email,
                    uu.id as updated_user_id, uu.username as updated_username,
                    uu.full_name as updated_full_name, uu.email as updated_email
             FROM team_comm.announcements a
+            LEFT JOIN team_comm.workspaces w ON a.workspace_id = w.id
             LEFT JOIN team_comm.users cu ON a.created_by = cu.id
             LEFT JOIN team_comm.users uu ON a.updated_by = uu.id
             WHERE a.id = ?
@@ -180,24 +183,25 @@ public class AnnouncementRepository {
     
     private Announcement insert(Announcement announcement) {
         String sql = """
-            INSERT INTO team_comm.announcements (title, content, priority, created_by, updated_by, expiration_date)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO team_comm.announcements (workspace_id, title, content, priority, created_by, updated_by, expiration_date)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """;
         
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
-            stmt.setString(1, announcement.getTitle());
-            stmt.setString(2, announcement.getContent());
-            stmt.setString(3, announcement.getPriority().name());
-            stmt.setLong(4, announcement.getCreatedBy().getId());
-            stmt.setLong(5, announcement.getUpdatedBy().getId());
+            stmt.setLong(1, announcement.getWorkspace().getId());
+            stmt.setString(2, announcement.getTitle());
+            stmt.setString(3, announcement.getContent());
+            stmt.setString(4, announcement.getPriority().name());
+            stmt.setLong(5, announcement.getCreatedBy().getId());
+            stmt.setLong(6, announcement.getUpdatedBy().getId());
             
             // Handle expiration date (can be null)
             if (announcement.getExpirationDate() != null) {
-                stmt.setTimestamp(6, Timestamp.valueOf(announcement.getExpirationDate()));
+                stmt.setTimestamp(7, Timestamp.valueOf(announcement.getExpirationDate()));
             } else {
-                stmt.setNull(6, Types.TIMESTAMP);
+                stmt.setNull(7, Types.TIMESTAMP);
             }
             
             int rowsAffected = stmt.executeUpdate();
@@ -221,26 +225,27 @@ public class AnnouncementRepository {
     private Announcement update(Announcement announcement) {
         String sql = """
             UPDATE team_comm.announcements 
-            SET title = ?, content = ?, priority = ?, updated_by = ?, expiration_date = ?
+            SET workspace_id = ?, title = ?, content = ?, priority = ?, updated_by = ?, expiration_date = ?
             WHERE id = ?
             """;
         
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-            stmt.setString(1, announcement.getTitle());
-            stmt.setString(2, announcement.getContent());
-            stmt.setString(3, announcement.getPriority().name());
-            stmt.setLong(4, announcement.getUpdatedBy().getId());
+            stmt.setLong(1, announcement.getWorkspace().getId());
+            stmt.setString(2, announcement.getTitle());
+            stmt.setString(3, announcement.getContent());
+            stmt.setString(4, announcement.getPriority().name());
+            stmt.setLong(5, announcement.getUpdatedBy().getId());
             
             // Handle expiration date (can be null)
             if (announcement.getExpirationDate() != null) {
-                stmt.setTimestamp(5, Timestamp.valueOf(announcement.getExpirationDate()));
+                stmt.setTimestamp(6, Timestamp.valueOf(announcement.getExpirationDate()));
             } else {
-                stmt.setNull(5, Types.TIMESTAMP);
+                stmt.setNull(6, Types.TIMESTAMP);
             }
             
-            stmt.setLong(6, announcement.getId());
+            stmt.setLong(7, announcement.getId());
             
             int rowsAffected = stmt.executeUpdate();
             
@@ -303,6 +308,20 @@ public class AnnouncementRepository {
             announcement.setExpirationDate(expirationTimestamp.toLocalDateTime());
         }
         
+        // Map workspace (if available in result set)
+        try {
+            Long workspaceId = rs.getLong("workspace_id");
+            if (!rs.wasNull()) {
+                Workspace workspace = new Workspace();
+                workspace.setId(workspaceId);
+                workspace.setName(rs.getString("workspace_name"));
+                workspace.setDescription(rs.getString("workspace_description"));
+                announcement.setWorkspace(workspace);
+            }
+        } catch (SQLException e) {
+            // workspace columns not in this query - this is okay for some queries
+        }
+        
         // Map created by user
         User createdBy = new User();
         createdBy.setId(rs.getLong("created_user_id"));
@@ -320,5 +339,78 @@ public class AnnouncementRepository {
         announcement.setUpdatedBy(updatedBy);
         
         return announcement;
+    }
+    
+    /**
+     * Finds announcements by workspace with optional archive filter.
+     * 
+     * @param workspaceId Workspace ID to filter by
+     * @param activeOnly Whether to only include active (non-archived) announcements
+     * @return List of announcements for the workspace
+     */
+    public List<Announcement> findByWorkspace(Long workspaceId, boolean activeOnly) {
+        String sql = "SELECT a.*, " +
+                    "cu.id as created_user_id, cu.username as created_username, cu.full_name as created_full_name, cu.email as created_email, " +
+                    "uu.id as updated_user_id, uu.username as updated_username, uu.full_name as updated_full_name, uu.email as updated_email " +
+                    "FROM team_comm.announcements a " +
+                    "LEFT JOIN team_comm.users cu ON a.created_by = cu.id " +
+                    "LEFT JOIN team_comm.users uu ON a.updated_by = uu.id " +
+                    "WHERE a.workspace_id = ? " +
+                    (activeOnly ? "AND (a.is_archived IS NULL OR a.is_archived = false) " : "") +
+                    "ORDER BY a.created_at DESC";
+        
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setLong(1, workspaceId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<Announcement> announcements = new ArrayList<>();
+                while (rs.next()) {
+                    announcements.add(mapResultSetToAnnouncement(rs));
+                }
+                return announcements;
+            }
+        } catch (SQLException e) {
+            logger.error("Error finding announcements by workspace: {}", workspaceId, e);
+            throw new RuntimeException("Database error while retrieving announcements by workspace", e);
+        }
+    }
+    
+    /**
+     * Finds announcements by priority and workspace.
+     * 
+     * @param priority Priority to filter by
+     * @param workspaceId Workspace ID to filter by
+     * @return List of announcements with specified priority for the workspace
+     */
+    public List<Announcement> findByPriorityAndWorkspace(Priority priority, Long workspaceId) {
+        String sql = "SELECT a.*, " +
+                    "cu.username as created_username, cu.full_name as created_full_name, cu.email as created_email, " +
+                    "uu.username as updated_username, uu.full_name as updated_full_name, uu.email as updated_email " +
+                    "FROM team_comm.announcements a " +
+                    "JOIN team_comm.users cu ON a.created_by = cu.id " +
+                    "JOIN team_comm.users uu ON a.updated_by = uu.id " +
+                    "WHERE a.priority = ? AND a.workspace_id = ? " +
+                    "AND (a.is_archived IS NULL OR a.is_archived = false) " +
+                    "ORDER BY a.created_at DESC";
+        
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, priority.name());
+            stmt.setLong(2, workspaceId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<Announcement> announcements = new ArrayList<>();
+                while (rs.next()) {
+                    announcements.add(mapResultSetToAnnouncement(rs));
+                }
+                return announcements;
+            }
+        } catch (SQLException e) {
+            logger.error("Error finding announcements by priority and workspace: {} {}", priority, workspaceId, e);
+            throw new RuntimeException("Database error while retrieving announcements by priority and workspace", e);
+        }
     }
 }

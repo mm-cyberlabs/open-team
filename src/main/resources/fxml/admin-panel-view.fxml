@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import io.github.palexdev.materialfx.controls.MFXButton?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<VBox styleClass="admin-panel" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.AdminPanelController">
+   <children>
+      <!-- Header -->
+      <HBox alignment="CENTER_LEFT" styleClass="admin-header">
+         <children>
+            <Label styleClass="page-title" text="Administration Panel">
+               <font>
+                  <Font name="System Bold" size="24.0" />
+               </font>
+            </Label>
+         </children>
+         <padding>
+            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+         </padding>
+      </HBox>
+      
+      <!-- Status Bar -->
+      <HBox alignment="CENTER_LEFT" styleClass="status-bar">
+         <children>
+            <Label fx:id="statusLabel" styleClass="status-label" text="" />
+         </children>
+         <padding>
+            <Insets bottom="5.0" left="20.0" right="20.0" top="5.0" />
+         </padding>
+      </HBox>
+      
+      <!-- Main Content -->
+      <TabPane fx:id="adminTabPane" styleClass="admin-tabs" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+         <tabs>
+            <!-- Workspaces Tab -->
+            <Tab fx:id="workspacesTab" text="Workspaces">
+               <content>
+                  <VBox spacing="10.0">
+                     <children>
+                        <!-- Workspace Actions -->
+                        <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="action-bar">
+                           <children>
+                              <MFXButton fx:id="addWorkspaceButton" styleClass="primary-button" text="Add Workspace" />
+                              <MFXButton fx:id="refreshWorkspacesButton" styleClass="secondary-button" text="Refresh" />
+                              <Region HBox.hgrow="ALWAYS" />
+                              <TextField fx:id="workspaceSearchField" prefWidth="200.0" promptText="Search workspaces..." styleClass="search-field" />
+                           </children>
+                        </HBox>
+                        
+                        <!-- Workspace Table -->
+                        <TableView fx:id="workspaceTable" styleClass="data-table" VBox.vgrow="ALWAYS">
+                           <columns>
+                              <TableColumn fx:id="workspaceNameColumn" minWidth="150.0" prefWidth="200.0" text="Name" />
+                              <TableColumn fx:id="workspaceDescriptionColumn" minWidth="200.0" prefWidth="300.0" text="Description" />
+                              <TableColumn fx:id="workspaceCreatedColumn" minWidth="120.0" prefWidth="150.0" text="Created" />
+                              <TableColumn fx:id="workspaceActionsColumn" minWidth="200.0" prefWidth="220.0" text="Actions" />
+                           </columns>
+                           <columnResizePolicy>
+                              <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                           </columnResizePolicy>
+                        </TableView>
+                     </children>
+                     <padding>
+                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                     </padding>
+                  </VBox>
+               </content>
+            </Tab>
+            
+            <!-- Users Tab -->
+            <Tab fx:id="usersTab" text="Users">
+               <content>
+                  <VBox spacing="10.0">
+                     <children>
+                        <!-- User Actions -->
+                        <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="action-bar">
+                           <children>
+                              <MFXButton fx:id="addUserButton" styleClass="primary-button" text="Add User" />
+                              <MFXButton fx:id="refreshUsersButton" styleClass="secondary-button" text="Refresh" />
+                              <Region HBox.hgrow="ALWAYS" />
+                              <TextField fx:id="userSearchField" prefWidth="200.0" promptText="Search users..." styleClass="search-field" />
+                           </children>
+                        </HBox>
+                        
+                        <!-- User Table -->
+                        <TableView fx:id="userTable" styleClass="data-table" VBox.vgrow="ALWAYS">
+                           <columns>
+                              <TableColumn fx:id="userUsernameColumn" minWidth="120.0" prefWidth="150.0" text="Username" />
+                              <TableColumn fx:id="userFullNameColumn" minWidth="150.0" prefWidth="200.0" text="Full Name" />
+                              <TableColumn fx:id="userEmailColumn" minWidth="180.0" prefWidth="220.0" text="Email" />
+                              <TableColumn fx:id="userRoleColumn" minWidth="80.0" prefWidth="100.0" text="Role" />
+                              <TableColumn fx:id="userWorkspaceColumn" minWidth="120.0" prefWidth="150.0" text="Workspace" />
+                              <TableColumn fx:id="userActionsColumn" minWidth="260.0" prefWidth="280.0" text="Actions" />
+                           </columns>
+                           <columnResizePolicy>
+                              <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+                           </columnResizePolicy>
+                        </TableView>
+                     </children>
+                     <padding>
+                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                     </padding>
+                  </VBox>
+               </content>
+            </Tab>
+         </tabs>
+      </TabPane>
+   </children>
+</VBox>

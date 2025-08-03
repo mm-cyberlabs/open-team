@@ -8,6 +8,8 @@ import com.openteam.service.DeploymentService;
 import com.openteam.util.DateTimeUtil;
 import com.openteam.util.DialogUtils;
 import com.openteam.util.UIUtils;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -16,6 +18,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 import io.github.palexdev.materialfx.controls.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,27 +51,41 @@ public class DeploymentController implements Initializable {
     @FXML private TextArea releaseNotesTextArea;
     @FXML private ComboBox<Environment> environmentFilter;
     @FXML private ComboBox<DeploymentStatus> statusFilter;
-    @FXML private MFXCheckbox showArchivedCheckBox;
-    @FXML private MFXTextField searchField;
+    @FXML private CheckBox showArchivedCheckBox;
+    @FXML private TextField searchField;
     @FXML private SplitPane mainSplitPane;
     
     private final DeploymentService deploymentService;
     private final ObservableList<Deployment> deployments;
-    private final User currentUser;
+    private User currentUser;
     
     public DeploymentController() {
         this.deploymentService = new DeploymentService();
         this.deployments = FXCollections.observableArrayList();
-        this.currentUser = createDefaultUser();
     }
     
-    private User createDefaultUser() {
-        User user = new User();
-        user.setId(1L);
-        user.setUsername("admin");
-        user.setFullName("System Administrator");
-        user.setEmail("admin@company.com");
-        return user;
+    /**
+     * Sets the current user for this controller.
+     * This should be called after login to establish the user context.
+     */
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+    }
+    
+    /**
+     * Gets the current user, falling back to session if not set.
+     */
+    private User getCurrentUser() {
+        if (currentUser != null) {
+            return currentUser;
+        }
+        
+        // Try to get from session
+        if (LoginController.UserSession.isLoggedIn()) {
+            return LoginController.UserSession.getCurrentUser();
+        }
+        
+        throw new IllegalStateException("No current user available. User must be logged in.");
     }
     
     @Override
@@ -234,7 +251,44 @@ public class DeploymentController implements Initializable {
         
         // Allow clicking on selected row to deselect
         deploymentsTable.setRowFactory(tv -> {
-            TableRow<Deployment> row = new TableRow<>();
+            TableRow<Deployment> row = new TableRow<Deployment>() {
+                private Timeline blinkTimeline;
+                
+                @Override
+                protected void updateItem(Deployment deployment, boolean empty) {
+                    super.updateItem(deployment, empty);
+                    
+                    // Stop any existing animation
+                    if (blinkTimeline != null) {
+                        blinkTimeline.stop();
+                        blinkTimeline = null;
+                    }
+                    
+                    if (empty || deployment == null) {
+                        setStyle("");
+                        getStyleClass().removeAll("failed-row");
+                    } else {
+                        // Check if deployment failed
+                        boolean isFailed = deployment.getStatus() == DeploymentStatus.FAILED;
+                        
+                        if (isFailed) {
+                            getStyleClass().add("failed-row");
+                            // Create blinking animation for failed deployments
+                            blinkTimeline = new Timeline(
+                                new KeyFrame(Duration.seconds(0), e -> setStyle("-fx-background-color: rgba(244, 67, 54, 0.3);")),
+                                new KeyFrame(Duration.seconds(0.75), e -> setStyle("-fx-background-color: rgba(244, 67, 54, 0.8);")),
+                                new KeyFrame(Duration.seconds(1.5), e -> setStyle("-fx-background-color: rgba(244, 67, 54, 0.3);"))
+                            );
+                            blinkTimeline.setCycleCount(Timeline.INDEFINITE);
+                            blinkTimeline.play();
+                        } else {
+                            getStyleClass().removeAll("failed-row");
+                            setStyle("");
+                        }
+                    }
+                }
+            };
+            
             row.setOnMouseClicked(event -> {
                 if (event.getClickCount() == 1 && !row.isEmpty()) {
                     if (row.isSelected()) {
@@ -412,7 +466,16 @@ public class DeploymentController implements Initializable {
             String searchTerm = searchField.getText();
             boolean includeArchived = showArchivedCheckBox.isSelected();
             
-            List<Deployment> deploymentList = deploymentService.searchDeployments(searchTerm, includeArchived);
+            User user = getCurrentUser();
+            List<Deployment> deploymentList;
+            
+            if (user.isSuperAdmin()) {
+                // SUPER_ADMIN can see all deployments across all workspaces
+                deploymentList = deploymentService.searchDeployments(searchTerm, includeArchived);
+            } else {
+                // Regular users see only their workspace deployments
+                deploymentList = deploymentService.searchDeploymentsByWorkspace(searchTerm, includeArchived, user.getWorkspace().getId());
+            }
             
             deployments.clear();
             deployments.addAll(deploymentList);
@@ -442,7 +505,17 @@ public class DeploymentController implements Initializable {
             if (environment == null) {
                 loadDeployments();
             } else {
-                List<Deployment> filtered = deploymentService.getDeploymentsByEnvironment(environment);
+                User user = getCurrentUser();
+                List<Deployment> filtered;
+                
+                if (user.isSuperAdmin()) {
+                    // SUPER_ADMIN can see all deployments by environment across all workspaces
+                    filtered = deploymentService.getDeploymentsByEnvironment(environment);
+                } else {
+                    // Regular users see only their workspace deployments by environment
+                    filtered = deploymentService.getDeploymentsByEnvironmentAndWorkspace(environment, user.getWorkspace().getId());
+                }
+                
                 deployments.clear();
                 deployments.addAll(filtered);
                 statusLabel.setText("Showing " + filtered.size() + " " + 
@@ -459,7 +532,17 @@ public class DeploymentController implements Initializable {
             if (status == null) {
                 loadDeployments();
             } else {
-                List<Deployment> filtered = deploymentService.getDeploymentsByStatus(status);
+                User user = getCurrentUser();
+                List<Deployment> filtered;
+                
+                if (user.isSuperAdmin()) {
+                    // SUPER_ADMIN can see all deployments by status across all workspaces
+                    filtered = deploymentService.getDeploymentsByStatus(status);
+                } else {
+                    // Regular users see only their workspace deployments by status
+                    filtered = deploymentService.getDeploymentsByStatusAndWorkspace(status, user.getWorkspace().getId());
+                }
+                
                 deployments.clear();
                 deployments.addAll(filtered);
                 statusLabel.setText("Showing " + filtered.size() + " " + 
@@ -545,7 +628,8 @@ public class DeploymentController implements Initializable {
     
     @FXML
     private void createDeployment() {
-        Optional<Deployment> result = DialogUtils.showDeploymentDialog(null, currentUser);
+        User user = getCurrentUser();
+        Optional<Deployment> result = DialogUtils.showDeploymentDialog(null, user);
         
         result.ifPresent(deployment -> {
             try {
@@ -559,7 +643,7 @@ public class DeploymentController implements Initializable {
                     deployment.getStatus(),
                     deployment.getTicketNumber(),
                     deployment.getDocumentationUrl(),
-                    currentUser
+                    user
                 );
                 
                 refreshData();
@@ -582,7 +666,8 @@ public class DeploymentController implements Initializable {
             return;
         }
         
-        Optional<Deployment> result = DialogUtils.showDeploymentDialog(selected, currentUser);
+        User user = getCurrentUser();
+        Optional<Deployment> result = DialogUtils.showDeploymentDialog(selected, user);
         
         result.ifPresent(deployment -> {
             try {
@@ -597,7 +682,7 @@ public class DeploymentController implements Initializable {
                     deployment.getStatus(),
                     deployment.getTicketNumber(),
                     deployment.getDocumentationUrl(),
-                    currentUser
+                    user
                 );
                 
                 refreshData();
@@ -648,7 +733,8 @@ public class DeploymentController implements Initializable {
         }
         
         logger.info("Showing comments dialog for deployment: {} v{}", deployment.getReleaseName(), deployment.getVersion());
-        DialogUtils.showDeploymentCommentsDialog(deployment, currentUser);
+        User user = getCurrentUser();
+        DialogUtils.showDeploymentCommentsDialog(deployment, user);
         
         // Refresh the table to update comment counts
         performSearch();

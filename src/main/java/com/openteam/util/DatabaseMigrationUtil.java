@@ -27,7 +27,7 @@ public class DatabaseMigrationUtil {
         try {
             // Archive columns
             addArchiveColumnIfNotExists("announcements");
-            addArchiveColumnIfNotExists("activities");
+            addArchiveColumnIfNotExists("target_dates");
             addArchiveColumnIfNotExists("deployments");
             
             // Deployment specific columns
@@ -54,7 +54,7 @@ public class DatabaseMigrationUtil {
         
         try {
             addArchiveColumnIfNotExists("announcements");
-            addArchiveColumnIfNotExists("activities");
+            addArchiveColumnIfNotExists("target_dates");
             addArchiveColumnIfNotExists("deployments");
             
             logger.info("Archive columns migration completed successfully");
@@ -259,7 +259,7 @@ public class DatabaseMigrationUtil {
     public static void migrateActiveToArchived() {
         logger.info("Migrating is_active values to is_archived...");
         
-        String[] tables = {"announcements", "activities"};
+        String[] tables = {"announcements", "target_dates"};
         
         for (String tableName : tables) {
             try (Connection conn = dbConnection.getConnection()) {

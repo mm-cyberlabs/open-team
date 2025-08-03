@@ -9,6 +9,7 @@ import java.util.Objects;
  */
 public class Announcement {
     private Long id;
+    private Workspace workspace;
     private String title;
     private String content;
     private Priority priority;
@@ -28,8 +29,9 @@ public class Announcement {
         this.updatedAt = LocalDateTime.now();
     }
     
-    public Announcement(String title, String content, Priority priority, User createdBy) {
+    public Announcement(Workspace workspace, String title, String content, Priority priority, User createdBy) {
         this();
+        this.workspace = workspace;
         this.title = title;
         this.content = content;
         this.priority = priority;
@@ -44,6 +46,18 @@ public class Announcement {
     
     public void setId(Long id) {
         this.id = id;
+    }
+    
+    public Workspace getWorkspace() {
+        return workspace;
+    }
+    
+    public void setWorkspace(Workspace workspace) {
+        this.workspace = workspace;
+    }
+    
+    public Long getWorkspaceId() {
+        return workspace != null ? workspace.getId() : null;
     }
     
     public String getTitle() {

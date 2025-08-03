@@ -11,12 +11,12 @@
             <Label styleClass="view-title" text="Software Deployments" />
             <Region HBox.hgrow="ALWAYS" />
             <Label text="Search:" styleClass="filter-label" />
-            <MFXTextField fx:id="searchField" prefWidth="200.0"  styleClass="mfx-text-field" />
+            <TextField fx:id="searchField" prefWidth="200.0" promptText="Search deployments..." styleClass="search-field" />
             <Label text="Environment:" styleClass="filter-label" />
             <ComboBox fx:id="environmentFilter" prefWidth="150.0" styleClass="combo-box" promptText="All" />
             <Label text="Status:" styleClass="filter-label" />
             <ComboBox fx:id="statusFilter" prefWidth="150.0" styleClass="combo-box" promptText="All" />
-            <MFXCheckbox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
+            <CheckBox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
          </children>
       </HBox>
       

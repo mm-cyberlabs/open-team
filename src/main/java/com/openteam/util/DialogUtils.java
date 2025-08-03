@@ -2,6 +2,7 @@ package com.openteam.util;
 
 import com.openteam.model.*;
 import com.openteam.service.DeploymentService;
+import com.openteam.service.WorkspaceService;
 import io.github.palexdev.materialfx.controls.*;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -70,6 +71,21 @@ public class DialogUtils {
         priorityCombo.setValue(Priority.NORMAL);
         priorityCombo.setPrefWidth(150);
         
+        // Workspace selection (for super admins)
+        ComboBox<Workspace> workspaceCombo = new ComboBox<>();
+        workspaceCombo.setPrefWidth(300);
+        
+        if (currentUser.isSuperAdmin()) {
+            WorkspaceService workspaceService = new WorkspaceService();
+            workspaceCombo.getItems().addAll(workspaceService.getAccessibleWorkspaces(currentUser));
+            workspaceCombo.setDisable(false);
+            workspaceCombo.setPromptText("Select workspace");
+        } else {
+            workspaceCombo.getItems().add(currentUser.getWorkspace());
+            workspaceCombo.setValue(currentUser.getWorkspace());
+            workspaceCombo.setDisable(true);
+        }
+        
         DatePicker expirationDatePicker = new DatePicker();
         expirationDatePicker.setPromptText("Optional expiration date");
         expirationDatePicker.setPrefWidth(150);
@@ -94,6 +110,11 @@ public class DialogUtils {
             contentArea.setText(existing.getContent());
             priorityCombo.setValue(existing.getPriority());
             
+            // Set workspace for existing record
+            if (existing.getWorkspace() != null) {
+                workspaceCombo.setValue(existing.getWorkspace());
+            }
+            
             // Handle expiration date
             if (existing.getExpirationDate() != null) {
                 expirationDatePicker.setValue(existing.getExpirationDate().toLocalDate());
@@ -109,19 +130,23 @@ public class DialogUtils {
         grid.add(titleField, 1, 0);
         grid.add(new Label("Priority:"), 0, 1);
         grid.add(priorityCombo, 1, 1);
-        grid.add(new Label("Expires:"), 0, 2);
-        grid.add(neverExpiresCheckBox, 1, 2);
-        grid.add(new Label("Date:"), 0, 3);
-        grid.add(expirationDatePicker, 1, 3);
-        grid.add(new Label("Content:"), 0, 4);
-        grid.add(contentArea, 1, 4);
+        grid.add(new Label("Workspace:"), 0, 2);
+        grid.add(workspaceCombo, 1, 2);
+        grid.add(new Label("Expires:"), 0, 3);
+        grid.add(neverExpiresCheckBox, 1, 3);
+        grid.add(new Label("Date:"), 0, 4);
+        grid.add(expirationDatePicker, 1, 4);
+        grid.add(new Label("Content:"), 0, 5);
+        grid.add(contentArea, 1, 5);
         
         // Enable/disable save button based on input
         Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
         saveButton.setDisable(existing == null); // For new records, start disabled; for editing, start enabled
         
         Runnable validateInput = () -> {
-            boolean valid = !titleField.getText().trim().isEmpty() && !contentArea.getText().trim().isEmpty();
+            boolean valid = !titleField.getText().trim().isEmpty() && 
+                           !contentArea.getText().trim().isEmpty() &&
+                           workspaceCombo.getValue() != null;
             saveButton.setDisable(!valid);
         };
         
@@ -129,6 +154,7 @@ public class DialogUtils {
         titleField.textProperty().addListener((obs, old, newVal) -> validateInput.run());
         contentArea.textProperty().addListener((obs, old, newVal) -> validateInput.run());
         priorityCombo.valueProperty().addListener((obs, old, newVal) -> validateInput.run());
+        workspaceCombo.valueProperty().addListener((obs, old, newVal) -> validateInput.run());
         
         // Initial validation call
         validateInput.run();
@@ -150,6 +176,7 @@ public class DialogUtils {
                 if (existing == null) {
                     // Create new
                     Announcement newAnnouncement = new Announcement(
+                        workspaceCombo.getValue(),
                         titleField.getText().trim(),
                         contentArea.getText().trim(),
                         priorityCombo.getValue(),
@@ -159,6 +186,7 @@ public class DialogUtils {
                     return newAnnouncement;
                 } else {
                     // Update existing
+                    existing.setWorkspace(workspaceCombo.getValue());
                     existing.setTitle(titleField.getText().trim());
                     existing.setContent(contentArea.getText().trim());
                     existing.setPriority(priorityCombo.getValue());
@@ -352,6 +380,21 @@ public class DialogUtils {
         releaseNotesArea.setPrefWidth(300);
         releaseNotesArea.setWrapText(true);
         
+        // Workspace selection (for super admins)
+        ComboBox<Workspace> workspaceCombo = new ComboBox<>();
+        workspaceCombo.setPrefWidth(300);
+        
+        if (currentUser.isSuperAdmin()) {
+            WorkspaceService workspaceService = new WorkspaceService();
+            workspaceCombo.getItems().addAll(workspaceService.getAccessibleWorkspaces(currentUser));
+            workspaceCombo.setDisable(false);
+            workspaceCombo.setPromptText("Select workspace");
+        } else {
+            workspaceCombo.getItems().add(currentUser.getWorkspace());
+            workspaceCombo.setValue(currentUser.getWorkspace());
+            workspaceCombo.setDisable(true);
+        }
+        
         // Populate fields if editing
         if (existing != null) {
             releaseNameField.setText(existing.getReleaseName());
@@ -364,6 +407,11 @@ public class DialogUtils {
             ticketNumberField.setText(existing.getTicketNumber() != null ? existing.getTicketNumber() : "");
             documentationUrlField.setText(existing.getDocumentationUrl() != null ? existing.getDocumentationUrl() : "");
             releaseNotesArea.setText(existing.getReleaseNotes());
+            
+            // Set workspace for existing record
+            if (existing.getWorkspace() != null) {
+                workspaceCombo.setValue(existing.getWorkspace());
+            }
         }
         
         grid.add(new Label("Release Name:"), 0, 0);
@@ -380,8 +428,10 @@ public class DialogUtils {
         grid.add(environmentCombo, 1, 5);
         grid.add(new Label("Status:"), 0, 6);
         grid.add(statusCombo, 1, 6);
-        grid.add(new Label("Release Notes:"), 0, 7);
-        grid.add(releaseNotesArea, 1, 7);
+        grid.add(new Label("Workspace:"), 0, 7);
+        grid.add(workspaceCombo, 1, 7);
+        grid.add(new Label("Release Notes:"), 0, 8);
+        grid.add(releaseNotesArea, 1, 8);
         
         // Enable/disable save button based on input
         Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
@@ -390,7 +440,8 @@ public class DialogUtils {
         Runnable validateInput = () -> {
             boolean valid = !releaseNameField.getText().trim().isEmpty() &&
                            !versionField.getText().trim().isEmpty() &&
-                           deploymentDatePicker.isValid();
+                           deploymentDatePicker.isValid() &&
+                           workspaceCombo.getValue() != null;
             saveButton.setDisable(!valid);
         };
         
@@ -402,6 +453,7 @@ public class DialogUtils {
         releaseNotesArea.textProperty().addListener((obs, old, newVal) -> validateInput.run());
         environmentCombo.valueProperty().addListener((obs, old, newVal) -> validateInput.run());
         statusCombo.valueProperty().addListener((obs, old, newVal) -> validateInput.run());
+        workspaceCombo.valueProperty().addListener((obs, old, newVal) -> validateInput.run());
         deploymentDatePicker.getDatePicker().valueProperty().addListener((obs, old, newVal) -> validateInput.run());
         
         // Initial validation call
@@ -424,6 +476,7 @@ public class DialogUtils {
                     if (existing == null) {
                         // Create new
                         return new Deployment(
+                            workspaceCombo.getValue(),
                             releaseNameField.getText().trim(),
                             versionField.getText().trim(),
                             deploymentDateTime,
@@ -437,6 +490,7 @@ public class DialogUtils {
                         );
                     } else {
                         // Update existing
+                        existing.setWorkspace(workspaceCombo.getValue());
                         existing.setReleaseName(releaseNameField.getText().trim());
                         existing.setVersion(versionField.getText().trim());
                         existing.setDeploymentDateTime(deploymentDateTime);
@@ -571,6 +625,7 @@ public class DialogUtils {
                     if (existing == null) {
                         // Create new
                         return new TargetDate(
+                            currentUser.getWorkspace(),
                             projectNameField.getText().trim(),
                             taskNameField.getText().trim(),
                             targetDateTime,

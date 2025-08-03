@@ -9,6 +9,7 @@ import java.util.Objects;
  */
 public class TargetDate {
     private Long id;
+    private Workspace workspace;
     private String projectName;
     private String taskName;
     private LocalDateTime targetDate;
@@ -28,9 +29,10 @@ public class TargetDate {
         this.updatedAt = LocalDateTime.now();
     }
     
-    public TargetDate(String projectName, String taskName, LocalDateTime targetDate,
+    public TargetDate(Workspace workspace, String projectName, String taskName, LocalDateTime targetDate,
                      User driverUser, String documentationUrl, TargetDateStatus status, User createdBy) {
         this();
+        this.workspace = workspace;
         this.projectName = projectName;
         this.taskName = taskName;
         this.targetDate = targetDate;
@@ -48,6 +50,18 @@ public class TargetDate {
     
     public void setId(Long id) {
         this.id = id;
+    }
+    
+    public Workspace getWorkspace() {
+        return workspace;
+    }
+    
+    public void setWorkspace(Workspace workspace) {
+        this.workspace = workspace;
+    }
+    
+    public Long getWorkspaceId() {
+        return workspace != null ? workspace.getId() : null;
     }
     
     public String getProjectName() {

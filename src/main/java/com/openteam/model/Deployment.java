@@ -9,6 +9,7 @@ import java.util.Objects;
  */
 public class Deployment {
     private Long id;
+    private Workspace workspace;
     private String releaseName;
     private String version;
     private LocalDateTime deploymentDateTime;
@@ -32,10 +33,11 @@ public class Deployment {
         this.updatedAt = LocalDateTime.now();
     }
     
-    public Deployment(String releaseName, String version, LocalDateTime deploymentDateTime,
+    public Deployment(Workspace workspace, String releaseName, String version, LocalDateTime deploymentDateTime,
                      User driverUser, String releaseNotes, Environment environment,
                      DeploymentStatus status, User createdBy) {
         this();
+        this.workspace = workspace;
         this.releaseName = releaseName;
         this.version = version;
         this.deploymentDateTime = deploymentDateTime;
@@ -47,10 +49,11 @@ public class Deployment {
         this.updatedBy = createdBy;
     }
     
-    public Deployment(String releaseName, String version, LocalDateTime deploymentDateTime,
+    public Deployment(Workspace workspace, String releaseName, String version, LocalDateTime deploymentDateTime,
                      User driverUser, String releaseNotes, Environment environment,
                      DeploymentStatus status, String ticketNumber, String documentationUrl, User createdBy) {
         this();
+        this.workspace = workspace;
         this.releaseName = releaseName;
         this.version = version;
         this.deploymentDateTime = deploymentDateTime;
@@ -71,6 +74,18 @@ public class Deployment {
     
     public void setId(Long id) {
         this.id = id;
+    }
+    
+    public Workspace getWorkspace() {
+        return workspace;
+    }
+    
+    public void setWorkspace(Workspace workspace) {
+        this.workspace = workspace;
+    }
+    
+    public Long getWorkspaceId() {
+        return workspace != null ? workspace.getId() : null;
     }
     
     public String getReleaseName() {

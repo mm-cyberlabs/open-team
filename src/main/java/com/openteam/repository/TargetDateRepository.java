@@ -3,6 +3,7 @@ package com.openteam.repository;
 import com.openteam.model.TargetDate;
 import com.openteam.model.TargetDateStatus;
 import com.openteam.model.User;
+import com.openteam.model.Workspace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,6 +115,7 @@ public class TargetDateRepository {
         String sql = """
             SELECT t.id, t.project_name, t.task_name, t.target_date, t.documentation_url,
                    t.status, t.is_archived, t.created_at, t.updated_at,
+                   w.id as workspace_id, w.name as workspace_name, w.description as workspace_description,
                    du.id as driver_user_id, du.username as driver_username,
                    du.full_name as driver_full_name, du.email as driver_email,
                    cu.id as created_user_id, cu.username as created_username, 
@@ -121,6 +123,7 @@ public class TargetDateRepository {
                    uu.id as updated_user_id, uu.username as updated_username,
                    uu.full_name as updated_full_name, uu.email as updated_email
             FROM team_comm.target_dates t
+            LEFT JOIN team_comm.workspaces w ON t.workspace_id = w.id
             LEFT JOIN team_comm.users du ON t.driver_user_id = du.id
             LEFT JOIN team_comm.users cu ON t.created_by = cu.id
             LEFT JOIN team_comm.users uu ON t.updated_by = uu.id
@@ -252,22 +255,23 @@ public class TargetDateRepository {
     
     private TargetDate insert(TargetDate targetDate) {
         String sql = """
-            INSERT INTO team_comm.target_dates (project_name, task_name, target_date, driver_user_id,
+            INSERT INTO team_comm.target_dates (workspace_id, project_name, task_name, target_date, driver_user_id,
                                               documentation_url, status, created_by, updated_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
         
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
-            stmt.setString(1, targetDate.getProjectName());
-            stmt.setString(2, targetDate.getTaskName());
-            stmt.setTimestamp(3, Timestamp.valueOf(targetDate.getTargetDate()));
-            stmt.setLong(4, targetDate.getDriverUser().getId());
-            stmt.setString(5, targetDate.getDocumentationUrl());
-            stmt.setString(6, targetDate.getStatus().name());
-            stmt.setLong(7, targetDate.getCreatedBy().getId());
-            stmt.setLong(8, targetDate.getUpdatedBy().getId());
+            stmt.setLong(1, targetDate.getWorkspace().getId());
+            stmt.setString(2, targetDate.getProjectName());
+            stmt.setString(3, targetDate.getTaskName());
+            stmt.setTimestamp(4, Timestamp.valueOf(targetDate.getTargetDate()));
+            stmt.setLong(5, targetDate.getDriverUser().getId());
+            stmt.setString(6, targetDate.getDocumentationUrl());
+            stmt.setString(7, targetDate.getStatus().name());
+            stmt.setLong(8, targetDate.getCreatedBy().getId());
+            stmt.setLong(9, targetDate.getUpdatedBy().getId());
             
             int rowsAffected = stmt.executeUpdate();
             
@@ -290,7 +294,7 @@ public class TargetDateRepository {
     private TargetDate update(TargetDate targetDate) {
         String sql = """
             UPDATE team_comm.target_dates 
-            SET project_name = ?, task_name = ?, target_date = ?, driver_user_id = ?,
+            SET workspace_id = ?, project_name = ?, task_name = ?, target_date = ?, driver_user_id = ?,
                 documentation_url = ?, status = ?, is_archived = ?, updated_by = ?
             WHERE id = ?
             """;
@@ -298,15 +302,16 @@ public class TargetDateRepository {
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-            stmt.setString(1, targetDate.getProjectName());
-            stmt.setString(2, targetDate.getTaskName());
-            stmt.setTimestamp(3, Timestamp.valueOf(targetDate.getTargetDate()));
-            stmt.setLong(4, targetDate.getDriverUser().getId());
-            stmt.setString(5, targetDate.getDocumentationUrl());
-            stmt.setString(6, targetDate.getStatus().name());
-            stmt.setBoolean(7, targetDate.getIsArchived() != null ? targetDate.getIsArchived() : false);
-            stmt.setLong(8, targetDate.getUpdatedBy().getId());
-            stmt.setLong(9, targetDate.getId());
+            stmt.setLong(1, targetDate.getWorkspace().getId());
+            stmt.setString(2, targetDate.getProjectName());
+            stmt.setString(3, targetDate.getTaskName());
+            stmt.setTimestamp(4, Timestamp.valueOf(targetDate.getTargetDate()));
+            stmt.setLong(5, targetDate.getDriverUser().getId());
+            stmt.setString(6, targetDate.getDocumentationUrl());
+            stmt.setString(7, targetDate.getStatus().name());
+            stmt.setBoolean(8, targetDate.getIsArchived() != null ? targetDate.getIsArchived() : false);
+            stmt.setLong(9, targetDate.getUpdatedBy().getId());
+            stmt.setLong(10, targetDate.getId());
             
             int rowsAffected = stmt.executeUpdate();
             
@@ -333,6 +338,20 @@ public class TargetDateRepository {
         targetDate.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
         targetDate.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
         
+        // Map workspace (if available in result set)
+        try {
+            Long workspaceId = rs.getLong("workspace_id");
+            if (!rs.wasNull()) {
+                Workspace workspace = new Workspace();
+                workspace.setId(workspaceId);
+                workspace.setName(rs.getString("workspace_name"));
+                workspace.setDescription(rs.getString("workspace_description"));
+                targetDate.setWorkspace(workspace);
+            }
+        } catch (SQLException e) {
+            // workspace columns not in this query - this is okay for some queries
+        }
+        
         // Map driver user
         User driverUser = new User();
         driverUser.setId(rs.getLong("driver_user_id"));
@@ -358,5 +377,99 @@ public class TargetDateRepository {
         targetDate.setUpdatedBy(updatedBy);
         
         return targetDate;
+    }
+    
+    /**
+     * Searches target dates by workspace with optional search term and archive filter.
+     * 
+     * @param searchTerm Search term (can be null or empty for all results)
+     * @param includeArchived Whether to include archived target dates
+     * @param workspaceId Workspace ID to filter by
+     * @return List of matching target dates for the workspace
+     */
+    public List<TargetDate> searchByWorkspace(String searchTerm, boolean includeArchived, Long workspaceId) {
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT td.*, ");
+        sqlBuilder.append("du.id as driver_user_id, du.username as driver_username, du.full_name as driver_full_name, du.email as driver_email, ");
+        sqlBuilder.append("cu.id as created_user_id, cu.username as created_username, cu.full_name as created_full_name, cu.email as created_email, ");
+        sqlBuilder.append("uu.id as updated_user_id, uu.username as updated_username, uu.full_name as updated_full_name, uu.email as updated_email ");
+        sqlBuilder.append("FROM team_comm.target_dates td ");
+        sqlBuilder.append("LEFT JOIN team_comm.users du ON td.driver_user_id = du.id ");
+        sqlBuilder.append("LEFT JOIN team_comm.users cu ON td.created_by = cu.id ");
+        sqlBuilder.append("LEFT JOIN team_comm.users uu ON td.updated_by = uu.id ");
+        sqlBuilder.append("WHERE td.workspace_id = ? ");
+        
+        if (!includeArchived) {
+            sqlBuilder.append("AND (td.is_archived IS NULL OR td.is_archived = false) ");
+        }
+        
+        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+            sqlBuilder.append("AND (LOWER(td.project_name) LIKE LOWER(?) OR LOWER(td.task_name) LIKE LOWER(?)) ");
+        }
+        
+        sqlBuilder.append("ORDER BY td.target_date ASC");
+        
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sqlBuilder.toString())) {
+            
+            int paramIndex = 1;
+            stmt.setLong(paramIndex++, workspaceId);
+            
+            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                String searchPattern = "%" + searchTerm.trim() + "%";
+                stmt.setString(paramIndex++, searchPattern);
+                stmt.setString(paramIndex++, searchPattern);
+            }
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<TargetDate> targetDates = new ArrayList<>();
+                while (rs.next()) {
+                    targetDates.add(mapResultSetToTargetDate(rs));
+                }
+                return targetDates;
+            }
+        } catch (SQLException e) {
+            logger.error("Error searching target dates by workspace: {}", workspaceId, e);
+            throw new RuntimeException("Database error while searching target dates by workspace", e);
+        }
+    }
+    
+    /**
+     * Finds target dates by status and workspace.
+     * 
+     * @param status Target date status to filter by
+     * @param workspaceId Workspace ID to filter by
+     * @return List of target dates with specified status for the workspace
+     */
+    public List<TargetDate> findByStatusAndWorkspace(TargetDateStatus status, Long workspaceId) {
+        String sql = "SELECT td.*, " +
+                    "du.id as driver_user_id, du.username as driver_username, du.full_name as driver_full_name, du.email as driver_email, " +
+                    "cu.id as created_user_id, cu.username as created_username, cu.full_name as created_full_name, cu.email as created_email, " +
+                    "uu.id as updated_user_id, uu.username as updated_username, uu.full_name as updated_full_name, uu.email as updated_email " +
+                    "FROM team_comm.target_dates td " +
+                    "LEFT JOIN team_comm.users du ON td.driver_user_id = du.id " +
+                    "LEFT JOIN team_comm.users cu ON td.created_by = cu.id " +
+                    "LEFT JOIN team_comm.users uu ON td.updated_by = uu.id " +
+                    "WHERE td.status = ? AND td.workspace_id = ? " +
+                    "AND (td.is_archived IS NULL OR td.is_archived = false) " +
+                    "ORDER BY td.target_date ASC";
+        
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, status.name());
+            stmt.setLong(2, workspaceId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<TargetDate> targetDates = new ArrayList<>();
+                while (rs.next()) {
+                    targetDates.add(mapResultSetToTargetDate(rs));
+                }
+                return targetDates;
+            }
+        } catch (SQLException e) {
+            logger.error("Error finding target dates by status and workspace: {} {}", status, workspaceId, e);
+            throw new RuntimeException("Database error while retrieving target dates by status and workspace", e);
+        }
     }
 }

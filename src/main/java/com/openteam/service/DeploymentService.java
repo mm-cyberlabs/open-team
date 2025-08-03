@@ -105,7 +105,7 @@ public class DeploymentService {
         
         validateDeploymentData(releaseName, version, deploymentDateTime, driverUser, createdBy);
         
-        Deployment deployment = new Deployment(releaseName, version, deploymentDateTime,
+        Deployment deployment = new Deployment(createdBy.getWorkspace(), releaseName, version, deploymentDateTime,
                                              driverUser, releaseNotes, environment, 
                                              status, ticketNumber, documentationUrl, createdBy);
         deployment.setCreatedAt(LocalDateTime.now());
@@ -504,5 +504,43 @@ public class DeploymentService {
     public int getCommentCountForDeployment(Long deploymentId) {
         logger.debug("Getting comment count for deployment ID: {}", deploymentId);
         return commentRepository.countByDeploymentId(deploymentId);
+    }
+    
+    /**
+     * Searches deployments by workspace with optional search term and archive filter.
+     * 
+     * @param searchTerm Search term (can be null or empty for all results)
+     * @param includeArchived Whether to include archived deployments
+     * @param workspaceId Workspace ID to filter by
+     * @return List of matching deployments for the workspace
+     */
+    public List<Deployment> searchDeploymentsByWorkspace(String searchTerm, boolean includeArchived, Long workspaceId) {
+        logger.debug("Searching deployments for workspace: {}, searchTerm: '{}', includeArchived: {}", 
+                    workspaceId, searchTerm, includeArchived);
+        return deploymentRepository.searchByWorkspace(searchTerm, includeArchived, workspaceId);
+    }
+    
+    /**
+     * Retrieves deployments by environment and workspace.
+     * 
+     * @param environment Environment to filter by
+     * @param workspaceId Workspace ID to filter by
+     * @return List of deployments with specified environment for the workspace
+     */
+    public List<Deployment> getDeploymentsByEnvironmentAndWorkspace(Environment environment, Long workspaceId) {
+        logger.debug("Retrieving deployments with environment: {} for workspace: {}", environment, workspaceId);
+        return deploymentRepository.findByEnvironmentAndWorkspace(environment, workspaceId);
+    }
+    
+    /**
+     * Retrieves deployments by status and workspace.
+     * 
+     * @param status Deployment status to filter by
+     * @param workspaceId Workspace ID to filter by
+     * @return List of deployments with specified status for the workspace
+     */
+    public List<Deployment> getDeploymentsByStatusAndWorkspace(DeploymentStatus status, Long workspaceId) {
+        logger.debug("Retrieving deployments with status: {} for workspace: {}", status, workspaceId);
+        return deploymentRepository.findByStatusAndWorkspace(status, workspaceId);
     }
 }

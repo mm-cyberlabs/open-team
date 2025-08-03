@@ -1,9 +1,11 @@
 package com.openteam;
 
+import com.openteam.controller.LoginController;
 import com.openteam.repository.DatabaseConnection;
 import com.openteam.util.UIUtils;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -12,13 +14,14 @@ import org.slf4j.LoggerFactory;
 /**
  * Main application class for Open Team Communication App.
  * JavaFX desktop application for team communication and deployment tracking.
+ * Now includes authentication - starts with login screen.
  */
 public class OpenTeamApplication extends Application {
     private static final Logger logger = LoggerFactory.getLogger(OpenTeamApplication.class);
     
-    private static final String APPLICATION_TITLE = "Open Team Communication App";
-    private static final String MAIN_FXML = "/fxml/main-view.fxml";
-    private static final String APPLICATION_CSS = "/css/materialfx-theme.css";
+    private static final String APPLICATION_TITLE = "Open Team - Login";
+    private static final String LOGIN_FXML = "/fxml/login-view.fxml";
+    private static final String LOGIN_CSS = "/css/login-theme.css";
     private static final String APPLICATION_ICON = "/icons/openteam-logo.png";
     
     @Override
@@ -31,26 +34,34 @@ public class OpenTeamApplication extends Application {
                 return; // Exit if database connection fails
             }
             
-            // Load main FXML
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(MAIN_FXML));
-            Scene scene = new Scene(fxmlLoader.load());
+            // Load login FXML
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(LOGIN_FXML));
+            Parent root = fxmlLoader.load();
+            Scene scene = new Scene(root, 600, 700);
+            
+            // Set scene background to dark
+            scene.setFill(javafx.scene.paint.Color.web("#1a1a1a"));
+            
+            // Get login controller
+            LoginController loginController = fxmlLoader.getController();
+            loginController.setLoginStage(primaryStage);
             
             // Apply CSS theme
-            scene.getStylesheets().add(getClass().getResource(APPLICATION_CSS).toExternalForm());
+            scene.getStylesheets().add(getClass().getResource(LOGIN_CSS).toExternalForm());
             
             // Configure primary stage
             primaryStage.setTitle(APPLICATION_TITLE);
             primaryStage.setScene(scene);
-            primaryStage.setMinWidth(1200);
-            primaryStage.setMinHeight(800);
+            primaryStage.setResizable(false);
+            primaryStage.centerOnScreen();
             
             // Set application icon
             UIUtils.setApplicationIcon(primaryStage, APPLICATION_ICON);
             
-            // Show the application
+            // Show the login screen
             primaryStage.show();
             
-            logger.info("Open Team Application started successfully");
+            logger.info("Open Team Application login screen displayed");
             
         } catch (Exception e) {
             logger.error("Failed to start Open Team Application", e);

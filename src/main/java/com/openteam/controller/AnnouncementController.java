@@ -50,27 +50,40 @@ public class AnnouncementController implements Initializable {
     @FXML private Label statusLabel;
     @FXML private TextArea contentTextArea;
     @FXML private ComboBox<Priority> priorityFilter;
-    @FXML private MFXCheckbox showArchivedCheckBox;
+    @FXML private CheckBox showArchivedCheckBox;
     @FXML private SplitPane mainSplitPane;
     
     private final AnnouncementService announcementService;
     private final ObservableList<Announcement> announcements;
-    private final User currentUser; // For CRUD operations
+    private User currentUser; // For CRUD operations
     
     public AnnouncementController() {
         this.announcementService = new AnnouncementService();
         this.announcements = FXCollections.observableArrayList();
-        // TODO: Get current user from session/authentication
-        this.currentUser = createDefaultUser();
     }
     
-    private User createDefaultUser() {
-        User user = new User();
-        user.setId(1L);
-        user.setUsername("admin");
-        user.setFullName("System Administrator");
-        user.setEmail("admin@company.com");
-        return user;
+    /**
+     * Sets the current user for this controller.
+     * This should be called after login to establish the user context.
+     */
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+    }
+    
+    /**
+     * Gets the current user, falling back to session if not set.
+     */
+    private User getCurrentUser() {
+        if (currentUser != null) {
+            return currentUser;
+        }
+        
+        // Try to get from session
+        if (LoginController.UserSession.isLoggedIn()) {
+            return LoginController.UserSession.getCurrentUser();
+        }
+        
+        throw new IllegalStateException("No current user available. User must be logged in.");
     }
     
     @Override
@@ -340,7 +353,21 @@ public class AnnouncementController implements Initializable {
                 logger.info("Archived {} expired announcements", archivedCount);
             }
 
-            List<Announcement> announcementList = announcementService.getAllActiveAnnouncements();
+            User user = getCurrentUser();
+            List<Announcement> announcementList;
+            
+            // SUPER_ADMIN users can see all announcements across all workspaces
+            if (user.isSuperAdmin()) {
+                announcementList = announcementService.getAllActiveAnnouncements();
+                if (showArchivedCheckBox.isSelected()) {
+                    // For super admin, we need to get all announcements including archived
+                    // For now, use the existing method and filter manually
+                    // TODO: Consider adding a getAllAnnouncements method to service
+                }
+            } else {
+                // Regular users see only their workspace announcements
+                announcementList = announcementService.getAnnouncementsByWorkspace(user.getWorkspace().getId(), !showArchivedCheckBox.isSelected());
+            }
             announcements.clear();
             // Remove archived announcements if checkbox is unchecked
             // Safe removal
@@ -377,7 +404,17 @@ public class AnnouncementController implements Initializable {
             if (priority == null) {
                 loadAnnouncements();
             } else {
-                List<Announcement> filtered = announcementService.getAnnouncementsByPriority(priority);
+                User user = getCurrentUser();
+                List<Announcement> filtered;
+                
+                if (user.isSuperAdmin()) {
+                    // SUPER_ADMIN can see all announcements by priority across all workspaces
+                    filtered = announcementService.getAnnouncementsByPriority(priority);
+                } else {
+                    // Regular users see only their workspace announcements by priority
+                    filtered = announcementService.getAnnouncementsByPriorityAndWorkspace(priority, user.getWorkspace().getId());
+                }
+                
                 announcements.clear();
                 announcements.addAll(filtered);
                 statusLabel.setText("Showing " + filtered.size() + " " + 
@@ -441,7 +478,17 @@ public class AnnouncementController implements Initializable {
     @FXML
     private void showHighPriority() {
         try {
-            List<Announcement> highPriority = announcementService.getHighPriorityAnnouncements();
+            User user = getCurrentUser();
+            List<Announcement> highPriority;
+            
+            if (user.isSuperAdmin()) {
+                // SUPER_ADMIN can see all high priority announcements across all workspaces
+                highPriority = announcementService.getHighPriorityAnnouncements();
+            } else {
+                // Regular users see only their workspace high priority announcements
+                highPriority = announcementService.getHighPriorityAnnouncementsByWorkspace(user.getWorkspace().getId());
+            }
+            
             announcements.clear();
             announcements.addAll(highPriority);
             statusLabel.setText("Showing " + highPriority.size() + " high priority announcements");
@@ -466,7 +513,8 @@ public class AnnouncementController implements Initializable {
      */
     @FXML
     private void createAnnouncement() {
-        Optional<Announcement> result = DialogUtils.showAnnouncementDialog(null, currentUser);
+        User user = getCurrentUser();
+        Optional<Announcement> result = DialogUtils.showAnnouncementDialog(null, user);
         
         result.ifPresent(announcement -> {
             try {
@@ -475,7 +523,7 @@ public class AnnouncementController implements Initializable {
                     announcement.getContent(),
                     announcement.getPriority(),
                     announcement.getExpirationDate(),
-                    currentUser
+                    user
                 );
                 
                 refreshData();
@@ -501,7 +549,8 @@ public class AnnouncementController implements Initializable {
             return;
         }
         
-        Optional<Announcement> result = DialogUtils.showAnnouncementDialog(selected, currentUser);
+        User user = getCurrentUser();
+        Optional<Announcement> result = DialogUtils.showAnnouncementDialog(selected, user);
         
         result.ifPresent(announcement -> {
             try {
@@ -511,7 +560,7 @@ public class AnnouncementController implements Initializable {
                     announcement.getContent(),
                     announcement.getPriority(),
                     announcement.getExpirationDate(),
-                    currentUser
+                    user
                 );
                 
                 refreshData();

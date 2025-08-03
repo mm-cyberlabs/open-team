@@ -4,6 +4,7 @@ import com.openteam.model.Deployment;
 import com.openteam.model.DeploymentStatus;
 import com.openteam.model.Environment;
 import com.openteam.model.User;
+import com.openteam.model.Workspace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,6 +80,7 @@ public class DeploymentRepository {
                    d.environment, d.status, d.created_at, d.updated_at,
                    COALESCE(d.is_archived, false) as is_archived,
                    d.ticket_number, d.documentation_url,
+                   w.id as workspace_id, w.name as workspace_name, w.description as workspace_description,
                    du.id as driver_user_id, du.username as driver_username,
                    du.full_name as driver_full_name, du.email as driver_email,
                    cu.id as created_user_id, cu.username as created_username, 
@@ -86,6 +88,7 @@ public class DeploymentRepository {
                    uu.id as updated_user_id, uu.username as updated_username,
                    uu.full_name as updated_full_name, uu.email as updated_email
             FROM team_comm.deployments d
+            LEFT JOIN team_comm.workspaces w ON d.workspace_id = w.id
             LEFT JOIN team_comm.users du ON d.driver_user_id = du.id
             LEFT JOIN team_comm.users cu ON d.created_by = cu.id
             LEFT JOIN team_comm.users uu ON d.updated_by = uu.id
@@ -218,26 +221,27 @@ public class DeploymentRepository {
     
     private Deployment insert(Deployment deployment) {
         String sql = """
-            INSERT INTO team_comm.deployments (release_name, version, deployment_datetime,
+            INSERT INTO team_comm.deployments (workspace_id, release_name, version, deployment_datetime,
                                              driver_user_id, release_notes, environment, 
                                              status, ticket_number, documentation_url, created_by, updated_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
         
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             
-            stmt.setString(1, deployment.getReleaseName());
-            stmt.setString(2, deployment.getVersion());
-            stmt.setTimestamp(3, Timestamp.valueOf(deployment.getDeploymentDateTime()));
-            stmt.setLong(4, deployment.getDriverUser().getId());
-            stmt.setString(5, deployment.getReleaseNotes());
-            stmt.setString(6, deployment.getEnvironment().name());
-            stmt.setString(7, deployment.getStatus().name());
-            stmt.setString(8, deployment.getTicketNumber());
-            stmt.setString(9, deployment.getDocumentationUrl());
-            stmt.setLong(10, deployment.getCreatedBy().getId());
-            stmt.setLong(11, deployment.getUpdatedBy().getId());
+            stmt.setLong(1, deployment.getWorkspace().getId());
+            stmt.setString(2, deployment.getReleaseName());
+            stmt.setString(3, deployment.getVersion());
+            stmt.setTimestamp(4, Timestamp.valueOf(deployment.getDeploymentDateTime()));
+            stmt.setLong(5, deployment.getDriverUser().getId());
+            stmt.setString(6, deployment.getReleaseNotes());
+            stmt.setString(7, deployment.getEnvironment().name());
+            stmt.setString(8, deployment.getStatus().name());
+            stmt.setString(9, deployment.getTicketNumber());
+            stmt.setString(10, deployment.getDocumentationUrl());
+            stmt.setLong(11, deployment.getCreatedBy().getId());
+            stmt.setLong(12, deployment.getUpdatedBy().getId());
             
             int rowsAffected = stmt.executeUpdate();
             
@@ -260,7 +264,7 @@ public class DeploymentRepository {
     private Deployment update(Deployment deployment) {
         String sql = """
             UPDATE team_comm.deployments 
-            SET release_name = ?, version = ?, deployment_datetime = ?, driver_user_id = ?,
+            SET workspace_id = ?, release_name = ?, version = ?, deployment_datetime = ?, driver_user_id = ?,
                 release_notes = ?, environment = ?, status = ?, ticket_number = ?, 
                 documentation_url = ?, is_archived = ?, updated_by = ?
             WHERE id = ?
@@ -269,18 +273,19 @@ public class DeploymentRepository {
         try (Connection conn = dbConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
-            stmt.setString(1, deployment.getReleaseName());
-            stmt.setString(2, deployment.getVersion());
-            stmt.setTimestamp(3, Timestamp.valueOf(deployment.getDeploymentDateTime()));
-            stmt.setLong(4, deployment.getDriverUser().getId());
-            stmt.setString(5, deployment.getReleaseNotes());
-            stmt.setString(6, deployment.getEnvironment().name());
-            stmt.setString(7, deployment.getStatus().name());
-            stmt.setString(8, deployment.getTicketNumber());
-            stmt.setString(9, deployment.getDocumentationUrl());
-            stmt.setBoolean(10, deployment.getIsArchived() != null ? deployment.getIsArchived() : false);
-            stmt.setLong(11, deployment.getUpdatedBy().getId());
-            stmt.setLong(12, deployment.getId());
+            stmt.setLong(1, deployment.getWorkspace().getId());
+            stmt.setString(2, deployment.getReleaseName());
+            stmt.setString(3, deployment.getVersion());
+            stmt.setTimestamp(4, Timestamp.valueOf(deployment.getDeploymentDateTime()));
+            stmt.setLong(5, deployment.getDriverUser().getId());
+            stmt.setString(6, deployment.getReleaseNotes());
+            stmt.setString(7, deployment.getEnvironment().name());
+            stmt.setString(8, deployment.getStatus().name());
+            stmt.setString(9, deployment.getTicketNumber());
+            stmt.setString(10, deployment.getDocumentationUrl());
+            stmt.setBoolean(11, deployment.getIsArchived() != null ? deployment.getIsArchived() : false);
+            stmt.setLong(12, deployment.getUpdatedBy().getId());
+            stmt.setLong(13, deployment.getId());
             
             int rowsAffected = stmt.executeUpdate();
             
@@ -309,6 +314,20 @@ public class DeploymentRepository {
         deployment.setIsArchived(rs.getBoolean("is_archived"));
         deployment.setTicketNumber(rs.getString("ticket_number"));
         deployment.setDocumentationUrl(rs.getString("documentation_url"));
+        
+        // Map workspace (if available in result set)
+        try {
+            Long workspaceId = rs.getLong("workspace_id");
+            if (!rs.wasNull()) {
+                Workspace workspace = new Workspace();
+                workspace.setId(workspaceId);
+                workspace.setName(rs.getString("workspace_name"));
+                workspace.setDescription(rs.getString("workspace_description"));
+                deployment.setWorkspace(workspace);
+            }
+        } catch (SQLException e) {
+            // workspace columns not in this query - this is okay for some queries
+        }
         
         // Map driver user
         User driverUser = new User();
@@ -454,6 +473,140 @@ public class DeploymentRepository {
         } catch (SQLException e) {
             logger.error("Error unarchiving deployment with ID: " + id, e);
             throw new RuntimeException("Unable to unarchive deployment: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Searches deployments by workspace with optional search term and archive filter.
+     * 
+     * @param searchTerm Search term (can be null or empty for all results)
+     * @param includeArchived Whether to include archived deployments
+     * @param workspaceId Workspace ID to filter by
+     * @return List of matching deployments for the workspace
+     */
+    public List<Deployment> searchByWorkspace(String searchTerm, boolean includeArchived, Long workspaceId) {
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT d.*, ");
+        sqlBuilder.append("du.id as driver_user_id, du.username as driver_username, du.full_name as driver_full_name, du.email as driver_email, ");
+        sqlBuilder.append("cu.id as created_user_id, cu.username as created_username, cu.full_name as created_full_name, cu.email as created_email, ");
+        sqlBuilder.append("uu.id as updated_user_id, uu.username as updated_username, uu.full_name as updated_full_name, uu.email as updated_email ");
+        sqlBuilder.append("FROM team_comm.deployments d ");
+        sqlBuilder.append("LEFT JOIN team_comm.users du ON d.driver_user_id = du.id ");
+        sqlBuilder.append("LEFT JOIN team_comm.users cu ON d.created_by = cu.id ");
+        sqlBuilder.append("LEFT JOIN team_comm.users uu ON d.updated_by = uu.id ");
+        sqlBuilder.append("WHERE d.workspace_id = ? ");
+        
+        if (!includeArchived) {
+            sqlBuilder.append("AND (d.is_archived IS NULL OR d.is_archived = false) ");
+        }
+        
+        if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+            sqlBuilder.append("AND (LOWER(d.release_name) LIKE LOWER(?) OR LOWER(d.version) LIKE LOWER(?) OR LOWER(d.ticket_number) LIKE LOWER(?)) ");
+        }
+        
+        sqlBuilder.append("ORDER BY d.deployment_datetime DESC");
+        
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sqlBuilder.toString())) {
+            
+            int paramIndex = 1;
+            stmt.setLong(paramIndex++, workspaceId);
+            
+            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                String searchPattern = "%" + searchTerm.trim() + "%";
+                stmt.setString(paramIndex++, searchPattern);
+                stmt.setString(paramIndex++, searchPattern);
+                stmt.setString(paramIndex++, searchPattern);
+            }
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<Deployment> deployments = new ArrayList<>();
+                while (rs.next()) {
+                    deployments.add(mapResultSetToDeployment(rs));
+                }
+                return deployments;
+            }
+        } catch (SQLException e) {
+            logger.error("Error searching deployments by workspace: {}", workspaceId, e);
+            throw new RuntimeException("Database error while searching deployments by workspace", e);
+        }
+    }
+    
+    /**
+     * Finds deployments by environment and workspace.
+     * 
+     * @param environment Environment to filter by
+     * @param workspaceId Workspace ID to filter by
+     * @return List of deployments with specified environment for the workspace
+     */
+    public List<Deployment> findByEnvironmentAndWorkspace(Environment environment, Long workspaceId) {
+        String sql = "SELECT d.*, " +
+                    "du.id as driver_user_id, du.username as driver_username, du.full_name as driver_full_name, du.email as driver_email, " +
+                    "cu.id as created_user_id, cu.username as created_username, cu.full_name as created_full_name, cu.email as created_email, " +
+                    "uu.id as updated_user_id, uu.username as updated_username, uu.full_name as updated_full_name, uu.email as updated_email " +
+                    "FROM team_comm.deployments d " +
+                    "LEFT JOIN team_comm.users du ON d.driver_user_id = du.id " +
+                    "LEFT JOIN team_comm.users cu ON d.created_by = cu.id " +
+                    "LEFT JOIN team_comm.users uu ON d.updated_by = uu.id " +
+                    "WHERE d.environment = ? AND d.workspace_id = ? " +
+                    "AND (d.is_archived IS NULL OR d.is_archived = false) " +
+                    "ORDER BY d.deployment_datetime DESC";
+        
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, environment.name());
+            stmt.setLong(2, workspaceId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<Deployment> deployments = new ArrayList<>();
+                while (rs.next()) {
+                    deployments.add(mapResultSetToDeployment(rs));
+                }
+                return deployments;
+            }
+        } catch (SQLException e) {
+            logger.error("Error finding deployments by environment and workspace: {} {}", environment, workspaceId, e);
+            throw new RuntimeException("Database error while retrieving deployments by environment and workspace", e);
+        }
+    }
+    
+    /**
+     * Finds deployments by status and workspace.
+     * 
+     * @param status Deployment status to filter by
+     * @param workspaceId Workspace ID to filter by
+     * @return List of deployments with specified status for the workspace
+     */
+    public List<Deployment> findByStatusAndWorkspace(DeploymentStatus status, Long workspaceId) {
+        String sql = "SELECT d.*, " +
+                    "du.username as driver_username, du.full_name as driver_full_name, du.email as driver_email, " +
+                    "cu.username as created_username, cu.full_name as created_full_name, cu.email as created_email, " +
+                    "uu.username as updated_username, uu.full_name as updated_full_name, uu.email as updated_email " +
+                    "FROM team_comm.deployments d " +
+                    "JOIN team_comm.users du ON d.driver_user_id = du.id " +
+                    "JOIN team_comm.users cu ON d.created_by = cu.id " +
+                    "JOIN team_comm.users uu ON d.updated_by = uu.id " +
+                    "WHERE d.status = ? AND d.workspace_id = ? " +
+                    "AND (d.is_archived IS NULL OR d.is_archived = false) " +
+                    "ORDER BY d.deployment_datetime DESC";
+        
+        try (Connection conn = dbConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, status.name());
+            stmt.setLong(2, workspaceId);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<Deployment> deployments = new ArrayList<>();
+                while (rs.next()) {
+                    deployments.add(mapResultSetToDeployment(rs));
+                }
+                return deployments;
+            }
+        } catch (SQLException e) {
+            logger.error("Error finding deployments by status and workspace: {} {}", status, workspaceId, e);
+            throw new RuntimeException("Database error while retrieving deployments by status and workspace", e);
         }
     }
 }

@@ -15,6 +15,8 @@
     -error-red: #ff3838;
     -neutral-gray: #8b8b8b;
     -hover-gray: #555555;
+    -primary-blue: #3498db;
+    -dark-blue: #2980b9;
 }
 
 /* Main application window */
@@ -48,6 +50,36 @@
 .top-toolbar {
     -fx-alignment: center-right;
     -fx-padding: 0 0 0 10;
+}
+
+/* User Info and Authentication Controls */
+.user-info-label {
+    -fx-text-fill: -text-light;
+    -fx-font-size: 12px;
+    -fx-padding: 5 10;
+    -fx-background-color: rgba(64, 64, 64, 0.3);
+    -fx-background-radius: 4;
+    -fx-border-color: -accent-gray;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+}
+
+.admin-button {
+    -fx-background-color: rgba(52, 152, 219, 0.8);
+    -fx-text-fill: white;
+}
+
+.admin-button:hover {
+    -fx-background-color: -primary-blue;
+}
+
+.logout-button {
+    -fx-background-color: rgba(255, 107, 107, 0.8);
+    -fx-text-fill: white;
+}
+
+.logout-button:hover {
+    -fx-background-color: -warning-orange;
 }
 
 /* Tab pane styling - Modern React-style buttons */
@@ -785,4 +817,256 @@
 .popup-window .date-picker-popup,
 .popup-window * {
     -fx-background-color: -secondary-dark !important;
+}
+
+/* ====================================
+   ADMIN PANEL STYLES
+   ==================================== */
+
+/* Admin Panel Container */
+.admin-panel {
+    -fx-background-color: -primary-dark;
+}
+
+.admin-header {
+    -fx-background-color: -secondary-dark;
+    -fx-border-color: -accent-gray;
+    -fx-border-width: 0 0 1 0;
+}
+
+.page-title {
+    -fx-text-fill: -text-light;
+    -fx-font-weight: bold;
+}
+
+/* Status Bar */
+.status-bar {
+    -fx-background-color: transparent;
+    -fx-min-height: 30;
+}
+
+.status-label {
+    -fx-padding: 5 10;
+    -fx-background-radius: 4;
+    -fx-font-size: 12px;
+}
+
+.status-error {
+    -fx-background-color: rgba(255, 56, 56, 0.2);
+    -fx-text-fill: -error-red;
+    -fx-border-color: -error-red;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+}
+
+.status-success {
+    -fx-background-color: rgba(0, 255, 133, 0.2);
+    -fx-text-fill: -success-green;
+    -fx-border-color: -success-green;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+}
+
+.status-info {
+    -fx-background-color: rgba(52, 152, 219, 0.2);
+    -fx-text-fill: -primary-blue;
+    -fx-border-color: -primary-blue;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+}
+
+/* Admin Tabs */
+.admin-tabs {
+    -fx-background-color: -primary-dark;
+}
+
+.admin-tabs .tab-pane {
+    -fx-background-color: -primary-dark;
+}
+
+.admin-tabs .tab-header-area {
+    -fx-background-color: -secondary-dark;
+    -fx-border-color: -accent-gray;
+    -fx-border-width: 0 0 1 0;
+}
+
+.admin-tabs .tab {
+    -fx-background-color: transparent;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-padding: 12 20;
+}
+
+.admin-tabs .tab:selected {
+    -fx-background-color: -accent-gray;
+    -fx-border-color: -primary-blue;
+    -fx-border-width: 0 0 2 0;
+}
+
+.admin-tabs .tab .tab-label {
+    -fx-text-fill: -text-light;
+    -fx-font-weight: bold;
+}
+
+.admin-tabs .tab:disabled .tab-label {
+    -fx-text-fill: -neutral-gray;
+    -fx-opacity: 0.5;
+}
+
+/* Action Bar */
+.action-bar {
+    -fx-background-color: rgba(45, 45, 45, 0.5);
+    -fx-padding: 10;
+    -fx-background-radius: 6;
+    -fx-border-color: -accent-gray;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+}
+
+/* Data Tables */
+.data-table {
+    -fx-background-color: -secondary-dark;
+    -fx-border-color: -accent-gray;
+    -fx-border-width: 1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+}
+
+.data-table .column-header-background {
+    -fx-background-color: -accent-gray;
+    -fx-border-color: -accent-gray;
+    -fx-border-width: 0 0 1 0;
+}
+
+.data-table .column-header {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-light;
+    -fx-font-weight: bold;
+    -fx-border-color: rgba(64, 64, 64, 0.5);
+    -fx-border-width: 0 1 0 0;
+}
+
+.data-table .table-row-cell {
+    -fx-background-color: transparent;
+    -fx-border-color: rgba(64, 64, 64, 0.3);
+    -fx-border-width: 0 0 1 0;
+}
+
+.data-table .table-row-cell:odd {
+    -fx-background-color: rgba(255, 255, 255, 0.02);
+}
+
+.data-table .table-row-cell:selected {
+    -fx-background-color: rgba(52, 152, 219, 0.3);
+    -fx-text-fill: -text-light;
+}
+
+.data-table .table-row-cell:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.05);
+}
+
+.data-table .table-cell {
+    -fx-text-fill: -text-light;
+    -fx-padding: 8 12;
+    -fx-border-color: transparent;
+}
+
+/* Small Buttons for Table Actions */
+.small-button {
+    -fx-font-size: 11px;
+    -fx-padding: 4 8;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-cursor: hand;
+}
+
+.small-button.primary-button {
+    -fx-background-color: -primary-blue;
+    -fx-text-fill: white;
+    -fx-border-color: transparent;
+}
+
+.small-button.primary-button:hover {
+    -fx-background-color: -dark-blue;
+}
+
+.small-button.secondary-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: -neutral-gray;
+    -fx-border-color: -neutral-gray;
+    -fx-border-width: 1;
+}
+
+.small-button.secondary-button:hover {
+    -fx-background-color: rgba(139, 139, 139, 0.2);
+    -fx-text-fill: -text-light;
+}
+
+.small-button.danger-button {
+    -fx-background-color: -error-red;
+    -fx-text-fill: white;
+    -fx-border-color: transparent;
+}
+
+.small-button.danger-button:hover {
+    -fx-background-color: derive(-error-red, -20%);
+}
+
+/* Dialog Enhancements */
+.dialog-pane {
+    -fx-background-color: -secondary-dark;
+    -fx-border-color: -accent-gray;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: -accent-gray;
+    -fx-text-fill: -text-light;
+}
+
+.dialog-pane .content {
+    -fx-background-color: -secondary-dark;
+    -fx-text-fill: -text-light;
+}
+
+.dialog-pane .button-bar {
+    -fx-background-color: -secondary-dark;
+}
+
+/* Form Controls in Dialogs */
+.dialog-pane .text-field,
+.dialog-pane .password-field,
+.dialog-pane .combo-box {
+    -fx-background-color: -primary-dark;
+    -fx-text-fill: -text-light;
+    -fx-border-color: -accent-gray;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.dialog-pane .text-field:focused,
+.dialog-pane .password-field:focused,
+.dialog-pane .combo-box:focused {
+    -fx-border-color: -primary-blue;
+    -fx-border-width: 2;
+}
+
+.dialog-pane .label {
+    -fx-text-fill: -text-light;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .data-table .table-cell {
+        -fx-font-size: 12px;
+        -fx-padding: 6 8;
+    }
+    
+    .small-button {
+        -fx-font-size: 10px;
+        -fx-padding: 3 6;
+    }
 }

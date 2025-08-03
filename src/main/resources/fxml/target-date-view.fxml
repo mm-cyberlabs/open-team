@@ -10,8 +10,8 @@
          <children>
             <Label styleClass="view-title" text="Important Target Dates" />
             <Region HBox.hgrow="ALWAYS" />
-            <MFXTextField fx:id="searchField" prefWidth="200.0" promptText="Search target dates..." styleClass="mfx-text-field" />
-            <MFXCheckbox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
+            <TextField fx:id="searchField" prefWidth="200.0" promptText="Search target dates..." styleClass="search-field" />
+            <CheckBox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
             <ComboBox fx:id="statusFilter" prefWidth="150.0" promptText="All" styleClass="combo-box" />
          </children>
       </HBox>

@@ -7,31 +7,56 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.MainController">
    <top>
-      <HBox styleClass="top-navigation">
+      <VBox styleClass="top-section">
          <children>
-            <ImageView fitHeight="40.0" fitWidth="40.0" preserveRatio="true" styleClass="app-logo">
-               <image>
-                  <Image url="@../icons/openteam-logo.png" />
-               </image>
-            </ImageView>
-            <Label styleClass="app-title" text="Open Team" />
-            <Region HBox.hgrow="ALWAYS" />
-            <TabPane fx:id="mainTabPane" styleClass="main-tabs" tabClosingPolicy="UNAVAILABLE">
-               <tabs>
-                  <Tab fx:id="announcementsTab" styleClass="nav-tab" text="📢 Announcements" />
-                  <Tab fx:id="targetDatesTab" styleClass="nav-tab" text="🎯 Target Dates" />
-                  <Tab fx:id="deploymentsTab" styleClass="nav-tab" text="🚀 Deployments" />
-               </tabs>
-            </TabPane>
-            <Region HBox.hgrow="ALWAYS" />
-            <HBox styleClass="top-toolbar" spacing="5">
+            <!-- Header Row with Logo and User Controls -->
+            <HBox styleClass="header-row">
                <children>
-                  <MFXButton onAction="#refreshCurrentView" styleClass="toolbar-button" text="🔄 Refresh" />
-                  <MFXButton onAction="#showAbout" styleClass="toolbar-button" text="ℹ️ About" />
+                  <ImageView fitHeight="32.0" fitWidth="32.0" preserveRatio="true" styleClass="app-logo">
+                     <image>
+                        <Image url="@../icons/openteam-logo.png" />
+                     </image>
+                  </ImageView>
+                  <Label styleClass="app-title" text="Open Team" />
+                  <Region HBox.hgrow="ALWAYS" />
+                  <HBox styleClass="top-toolbar" spacing="8">
+                     <children>
+                        <VBox spacing="2">
+                           <children>
+                              <Label fx:id="userInfoLabel" styleClass="user-info-label" text="User Info" />
+                              <HBox spacing="8" alignment="CENTER_LEFT">
+                                 <children>
+                                    <Label fx:id="workspaceInfoLabel" styleClass="workspace-info-label" text="Workspace: --" />
+                                    <MFXComboBox fx:id="workspaceNavigationCombo" styleClass="workspace-navigation-combo" visible="false" />
+                                 </children>
+                              </HBox>
+                           </children>
+                        </VBox>
+                        <MFXButton fx:id="adminButton" styleClass="toolbar-button admin-button" text="👤" visible="false" />
+                        <MFXButton onAction="#refreshCurrentView" styleClass="toolbar-button refresh-button" text="🔄" />
+                        <MFXButton onAction="#showAbout" styleClass="toolbar-button about-button" text="ℹ️" />
+                        <MFXButton fx:id="logoutButton" styleClass="toolbar-button logout-button" text="🚪" />
+                     </children>
+                  </HBox>
+               </children>
+            </HBox>
+            
+            <!-- Tab Row -->
+            <HBox styleClass="tab-row">
+               <children>
+                  <Region HBox.hgrow="ALWAYS" />
+                  <TabPane fx:id="mainTabPane" styleClass="main-tabs" tabClosingPolicy="UNAVAILABLE">
+                     <tabs>
+                        <Tab fx:id="announcementsTab" styleClass="nav-tab" text="📢 Announcements" />
+                        <Tab fx:id="targetDatesTab" styleClass="nav-tab" text="🎯 Target Dates" />
+                        <Tab fx:id="deploymentsTab" styleClass="nav-tab" text="🚀 Deployments" />
+                     </tabs>
+                  </TabPane>
+                  <Region HBox.hgrow="ALWAYS" />
                </children>
             </HBox>
          </children>
-      </HBox>
+      </VBox>
    </top>
    <center>
       <StackPane fx:id="contentArea" />
