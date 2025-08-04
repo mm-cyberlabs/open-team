@@ -13,9 +13,9 @@
             <Label text="Search:" styleClass="filter-label" />
             <TextField fx:id="searchField" prefWidth="200.0" promptText="Search deployments..." styleClass="search-field" />
             <Label text="Environment:" styleClass="filter-label" />
-            <ComboBox fx:id="environmentFilter" prefWidth="150.0" styleClass="combo-box" promptText="All" />
+            <ComboBox fx:id="environmentFilter" prefWidth="140.0" styleClass="environment-filter-combo" />
             <Label text="Status:" styleClass="filter-label" />
-            <ComboBox fx:id="statusFilter" prefWidth="150.0" styleClass="combo-box" promptText="All" />
+            <ComboBox fx:id="statusFilter" prefWidth="140.0" styleClass="deployment-status-filter-combo" />
             <CheckBox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
          </children>
       </HBox>

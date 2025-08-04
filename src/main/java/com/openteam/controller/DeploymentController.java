@@ -301,60 +301,120 @@ public class DeploymentController implements Initializable {
     }
     
     private void setupFilters() {
-        // Environment filter
-        logger.debug("Setting up environment filter with {} items", Environment.values().length);
+        setupEnvironmentFilter();
+        setupDeploymentStatusFilter();
+    }
+    
+    private void setupEnvironmentFilter() {
+        environmentFilter.getItems().clear();
+
+        // Add null option for "All Environments"
         environmentFilter.getItems().add(null);
+
+        // Add all real environments
         environmentFilter.getItems().addAll(Environment.values());
-        
-        // Configure as simple dropdown
+
         environmentFilter.setEditable(false);
-        logger.debug("Environment filter items: {}", environmentFilter.getItems());
         
-        // Set prompt text instead of selecting an item to avoid green highlight
-        environmentFilter.setPromptText("All");
-        // Don't select any item initially
-        
-        environmentFilter.setConverter(new javafx.util.StringConverter<Environment>() {
+        // Set up the button cell (what's displayed when closed)
+        environmentFilter.setButtonCell(new javafx.scene.control.ListCell<Environment>() {
             @Override
-            public String toString(Environment item) {
-                return item == null ? "All" : item.getDisplayName();
-            }
-            
-            @Override
-            public Environment fromString(String string) {
-                return null;
+            protected void updateItem(Environment item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText("All Environments");
+                } else {
+                    setText(item.getDisplayName());
+                }
+                setStyle("-fx-text-fill: #ffffff; -fx-background-color: transparent;");
             }
         });
         
-        environmentFilter.getSelectionModel().selectedItemProperty().addListener(
-            (obs, oldValue, newValue) -> filterByEnvironment(newValue)
-        );
+        // Set up the cell factory for dropdown items with hover effects
+        environmentFilter.setCellFactory(listView -> new javafx.scene.control.ListCell<Environment>() {
+            @Override
+            protected void updateItem(Environment item, boolean empty) {
+                super.updateItem(item, empty);
+                
+                // Clear all style classes first
+                getStyleClass().removeAll("environment-dropdown-cell");
+                
+                if (empty || item == null) {
+                    setText("All Environments");
+                } else {
+                    setText(item.getDisplayName());
+                }
+                
+                if (!empty) {
+                    // Add CSS class for styling via CSS file
+                    getStyleClass().add("environment-dropdown-cell");
+                }
+            }
+        });
+
+        // Set the default selection to "All Environments" (null value)
+        environmentFilter.getSelectionModel().selectFirst(); // This selects the null item
         
-        // Status filter
+        // Add listener for filter changes
+        environmentFilter.getSelectionModel()
+                .selectedItemProperty()
+                .addListener((obs, oldVal, newVal) -> filterByEnvironment(newVal));
+    }
+    
+    private void setupDeploymentStatusFilter() {
+        statusFilter.getItems().clear();
+
+        // Add null option for "All Statuses"
         statusFilter.getItems().add(null);
+
+        // Add all real statuses
         statusFilter.getItems().addAll(DeploymentStatus.values());
-        
-        // Configure as simple dropdown
+
         statusFilter.setEditable(false);
-        // Set prompt text instead of selecting an item to avoid green highlight
-        statusFilter.setPromptText("All");
-        // Don't select any item initially
         
-        statusFilter.setConverter(new javafx.util.StringConverter<DeploymentStatus>() {
+        // Set up the button cell (what's displayed when closed)
+        statusFilter.setButtonCell(new javafx.scene.control.ListCell<DeploymentStatus>() {
             @Override
-            public String toString(DeploymentStatus item) {
-                return item == null ? "All" : item.getDisplayName();
-            }
-            
-            @Override
-            public DeploymentStatus fromString(String string) {
-                return null;
+            protected void updateItem(DeploymentStatus item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText("All Statuses");
+                } else {
+                    setText(item.getDisplayName());
+                }
+                setStyle("-fx-text-fill: #ffffff; -fx-background-color: transparent;");
             }
         });
         
-        statusFilter.getSelectionModel().selectedItemProperty().addListener(
-            (obs, oldValue, newValue) -> filterByStatus(newValue)
-        );
+        // Set up the cell factory for dropdown items with hover effects
+        statusFilter.setCellFactory(listView -> new javafx.scene.control.ListCell<DeploymentStatus>() {
+            @Override
+            protected void updateItem(DeploymentStatus item, boolean empty) {
+                super.updateItem(item, empty);
+                
+                // Clear all style classes first
+                getStyleClass().removeAll("deployment-status-dropdown-cell");
+                
+                if (empty || item == null) {
+                    setText("All Statuses");
+                } else {
+                    setText(item.getDisplayName());
+                }
+                
+                if (!empty) {
+                    // Add CSS class for styling via CSS file
+                    getStyleClass().add("deployment-status-dropdown-cell");
+                }
+            }
+        });
+
+        // Set the default selection to "All Statuses" (null value)
+        statusFilter.getSelectionModel().selectFirst(); // This selects the null item
+        
+        // Add listener for filter changes
+        statusFilter.getSelectionModel()
+                .selectedItemProperty()
+                .addListener((obs, oldVal, newVal) -> filterByStatus(newVal));
     }
     
     private void setupEventHandlers() {

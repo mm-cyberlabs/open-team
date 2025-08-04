@@ -244,31 +244,63 @@ public class TargetDateController implements Initializable {
     }
     
     private void setupFilters() {
-        // Status filter
+        setupStatusFilter();
+    }
+    
+    private void setupStatusFilter() {
+        statusFilter.getItems().clear();
+
+        // Add null option for "All Statuses"
         statusFilter.getItems().add(null);
+
+        // Add all real statuses
         statusFilter.getItems().addAll(TargetDateStatus.values());
-        
-        // Disable search functionality - make it a simple dropdown
+
         statusFilter.setEditable(false);
-        // Set prompt text instead of selecting an item to avoid green highlight
-        statusFilter.setPromptText("All");
-        // Don't select any item initially
         
-        statusFilter.setConverter(new javafx.util.StringConverter<TargetDateStatus>() {
+        // Set up the button cell (what's displayed when closed)
+        statusFilter.setButtonCell(new javafx.scene.control.ListCell<TargetDateStatus>() {
             @Override
-            public String toString(TargetDateStatus item) {
-                return item == null ? "All Statuses" : item.getDisplayName();
-            }
-            
-            @Override
-            public TargetDateStatus fromString(String string) {
-                return null;
+            protected void updateItem(TargetDateStatus item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText("All Statuses");
+                } else {
+                    setText(item.getDisplayName());
+                }
+                setStyle("-fx-text-fill: #ffffff; -fx-background-color: transparent;");
             }
         });
         
-        statusFilter.getSelectionModel().selectedItemProperty().addListener(
-            (obs, oldValue, newValue) -> filterByStatus(newValue)
-        );
+        // Set up the cell factory for dropdown items with hover effects
+        statusFilter.setCellFactory(listView -> new javafx.scene.control.ListCell<TargetDateStatus>() {
+            @Override
+            protected void updateItem(TargetDateStatus item, boolean empty) {
+                super.updateItem(item, empty);
+                
+                // Clear all style classes first
+                getStyleClass().removeAll("status-dropdown-cell");
+                
+                if (empty || item == null) {
+                    setText("All Statuses");
+                } else {
+                    setText(item.getDisplayName());
+                }
+                
+                if (!empty) {
+                    // Add CSS class for styling via CSS file
+                    getStyleClass().add("status-dropdown-cell");
+                }
+            }
+        });
+
+        // Set the default selection to "All Statuses" (null value)
+        statusFilter.getSelectionModel().selectFirst(); // This selects the null item
+        
+        // Add listener for filter changes
+        statusFilter.getSelectionModel()
+                .selectedItemProperty()
+                .addListener((obs, oldVal, newVal) -> filterByStatus(newVal));
     }
     
     private void setupEventHandlers() {
