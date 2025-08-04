@@ -781,7 +781,9 @@
 }
 
 .mfx-combo-box .list-cell:hover, .combo-box .list-cell:hover {
-    -fx-background-color: rgba(0, 255, 133, 0.15);
+    -fx-background-color: rgba(0, 255, 133, 0.25);
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
 }
 
 .mfx-combo-box .list-cell:selected, .combo-box .list-cell:selected {
@@ -857,8 +859,10 @@
 
 .list-view .list-cell:hover, .list-view .indexed-cell:hover,
 .combo-box .list-cell:hover, .mfx-combo-box .list-cell:hover {
-    -fx-background-color: rgba(0, 255, 133, 0.15) !important;
+    -fx-background-color: rgba(0, 255, 133, 0.25) !important;
     -fx-text-fill: #ffffff !important;
+    -fx-border-radius: 4px !important;
+    -fx-background-radius: 4px !important;
 }
 
 .list-view .list-cell:selected, .list-view .indexed-cell:selected,
@@ -884,13 +888,18 @@
 
 .dialog-pane .combo-box .list-cell:hover,
 .dialog-pane .mfx-combo-box .list-cell:hover {
-    -fx-background-color: rgba(0, 255, 133, 0.15) !important;
+    -fx-background-color: rgba(0, 255, 133, 0.25) !important;
+    -fx-text-fill: #ffffff !important;
+    -fx-border-radius: 4px !important;
+    -fx-background-radius: 4px !important;
 }
 
 .dialog-pane .combo-box .list-cell:selected,
 .dialog-pane .mfx-combo-box .list-cell:selected {
-    -fx-background-color: rgba(0, 255, 133, 0.25) !important;
+    -fx-background-color: rgba(0, 255, 133, 0.35) !important;
     -fx-text-fill: #ffffff !important;
+    -fx-border-radius: 4px !important;
+    -fx-background-radius: 4px !important;
 }
 
 /* Force styling on any window that might contain ComboBoxes */
@@ -982,7 +991,9 @@
 }
 
 .popup-window .list-cell:hover {
-    -fx-background-color: rgba(0, 255, 133, 0.15) !important;
+    -fx-background-color: rgba(0, 255, 133, 0.25) !important;
+    -fx-border-radius: 4px !important;
+    -fx-background-radius: 4px !important;
 }
 
 .popup-window .list-cell:selected {
@@ -1006,7 +1017,9 @@
 }
 
 .mfx-popup .list-cell:hover {
-    -fx-background-color: rgba(0, 255, 133, 0.15) !important;
+    -fx-background-color: rgba(0, 255, 133, 0.25) !important;
+    -fx-border-radius: 4px !important;
+    -fx-background-radius: 4px !important;
 }
 
 .mfx-popup .list-cell:selected {
@@ -1045,11 +1058,13 @@
     -fx-padding: 8 12 !important;
 }
 
-/* Hover and selection states for all popup list cells */
+/* Hover and selection states for all popup list cells - Enhanced visibility */
 .popup .list-cell:hover, .popup-content .list-cell:hover,
 .popup-window .list-cell:hover, .mfx-popup .list-cell:hover {
-    -fx-background-color: rgba(0, 255, 133, 0.15) !important;
+    -fx-background-color: rgba(0, 255, 133, 0.25) !important;
     -fx-text-fill: #ffffff !important;
+    -fx-border-radius: 4px !important;
+    -fx-background-radius: 4px !important;
 }
 
 .popup .list-cell:selected, .popup-content .list-cell:selected,
@@ -1144,7 +1159,9 @@
 }
 
 .mfx-combo-box .virtual-flow .list-cell:hover {
-    -fx-background-color: rgba(0, 255, 133, 0.15);
+    -fx-background-color: rgba(0, 255, 133, 0.25);
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
 }
 
 .mfx-combo-box .virtual-flow .list-cell:selected {
@@ -1395,6 +1412,181 @@
 .archive-checkbox:hover .box {
     -fx-border-color: -mfx-primary;
     -fx-effect: dropshadow(gaussian, rgba(0, 255, 133, 0.2), 4, 0, 0, 2);
+}
+
+/* Priority Filter ComboBox - JavaFX ComboBox with MaterialFX styling */
+.priority-filter-combo {
+    -fx-background-color: -mfx-surface;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: -mfx-outline-variant;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-font-size: 14px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 3, 0, 0, 1);
+    -fx-min-height: 36px;
+    -fx-pref-height: 36px;
+    -fx-padding: 0; /* Remove padding from main combobox */
+}
+
+.priority-filter-combo:hover {
+    -fx-border-color: rgba(0, 255, 133, 0.5);
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 133, 0.2), 4, 0, 0, 2);
+}
+
+.priority-filter-combo:focused,
+.priority-filter-combo:showing {
+    -fx-border-color: -mfx-primary;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(0, 255, 133, 0.4), 6, 0, 0, 2);
+}
+
+/* ComboBox button cell - the main display area */
+.priority-filter-combo .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ffffff !important;
+    -fx-font-size: 14px;
+    -fx-padding: 8 12 8 12;
+    -fx-alignment: center-left;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+
+.priority-filter-combo .list-cell:filled {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ffffff !important;
+}
+
+.priority-filter-combo .list-cell:empty {
+    -fx-background-color: transparent;
+}
+
+/* Ensure text content is visible */
+.priority-filter-combo .list-cell .text {
+    -fx-fill: #ffffff !important;
+    -fx-font-size: 14px;
+}
+
+/* Arrow button - move it to the right and make sure it doesn't overlap text */
+.priority-filter-combo .arrow-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 8 12 8 8;
+    -fx-min-width: 20px;
+    -fx-pref-width: 20px;
+}
+
+.priority-filter-combo .arrow {
+    -fx-background-color: #ffffff;
+    -fx-shape: "M 0 0 L 4 4 L 8 0 Z";
+    -fx-scale-shape: true;
+    -fx-min-width: 8;
+    -fx-min-height: 4;
+    -fx-max-width: 8;
+    -fx-max-height: 4;
+}
+
+/* Make sure there are no overlapping elements */
+.priority-filter-combo .combo-box-base {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+/* Dropdown popup */
+.priority-filter-combo .list-view {
+    -fx-background-color: -mfx-surface;
+    -fx-border-color: -mfx-outline;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 8, 0, 0, 4);
+    -fx-padding: 4 0 4 0;
+}
+
+/* Dropdown list cells */
+.priority-filter-combo .list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ffffff;
+    -fx-padding: 10 16 10 16;
+    -fx-font-size: 14px;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+
+.priority-filter-combo .list-view .list-cell:hover {
+    -fx-background-color: rgba(0, 255, 133, 0.15);
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+
+.priority-filter-combo .list-view .list-cell:selected {
+    -fx-background-color: rgba(0, 255, 133, 0.25);
+    -fx-text-fill: #ffffff;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+
+/* Ensure the popup window itself has dark background */
+.priority-filter-combo .combo-box-popup .list-view {
+    -fx-background-color: -mfx-surface;
+}
+
+/* Fix any potential overlay issues - ensure no transparent overlays block text */
+.priority-filter-combo * {
+    -fx-mouse-transparent: false;
+}
+
+/* Additional text visibility fixes */
+.priority-filter-combo .button-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ffffff !important;
+    -fx-padding: 8 12 8 12;
+}
+
+.priority-filter-combo .button-cell .text {
+    -fx-fill: #ffffff !important;
+}
+
+/* Ensure no overlays from focus or selection */
+.priority-filter-combo:focused .list-cell,
+.priority-filter-combo:showing .list-cell {
+    -fx-text-fill: #ffffff !important;
+}
+
+/* Remove any potential background overlays that might block text */
+.priority-filter-combo .combo-box-base,
+.priority-filter-combo .combo-box-button {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+/* Custom dropdown cell styling with hover effects */
+.priority-dropdown-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ffffff;
+    -fx-padding: 10 16 10 16;
+    -fx-font-size: 14px;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+
+.priority-dropdown-cell:hover {
+    -fx-background-color: rgba(0, 255, 133, 0.15) !important;
+    -fx-background-radius: 4px;
+    -fx-text-fill: #ffffff !important;
+}
+
+.priority-dropdown-cell:selected {
+    -fx-background-color: rgba(0, 255, 133, 0.25) !important;
+    -fx-background-radius: 4px;
+    -fx-text-fill: #ffffff !important;
+}
+
+.priority-dropdown-cell:hover:selected {
+    -fx-background-color: rgba(0, 255, 133, 0.35) !important;
+    -fx-background-radius: 4px;
+    -fx-text-fill: #ffffff !important;
 }
 
 /* Label for filter controls */

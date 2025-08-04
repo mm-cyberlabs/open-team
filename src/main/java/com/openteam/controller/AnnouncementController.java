@@ -10,6 +10,8 @@ import com.openteam.util.UIUtils;
 import io.github.palexdev.materialfx.controls.MFXButton;
 import io.github.palexdev.materialfx.controls.MFXCheckbox;
 import io.github.palexdev.materialfx.controls.MFXComboBox;
+import io.github.palexdev.materialfx.controls.MFXTableView;
+import io.github.palexdev.materialfx.controls.MFXTableColumn;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.util.Duration;
@@ -21,6 +23,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
+import javafx.util.StringConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -243,30 +246,59 @@ public class AnnouncementController implements Initializable {
      * Sets up the priority filter combo box.
      */
     private void setupPriorityFilter() {
-        priorityFilter.getItems().add(null); // Add "All" option
+        priorityFilter.getItems().clear();
+
+        // Add null option for "All Priorities"
+        priorityFilter.getItems().add(null);
+
+        // Add all real priorities
         priorityFilter.getItems().addAll(Priority.values());
-        
-        // Disable search functionality - make it a simple dropdown
+
         priorityFilter.setEditable(false);
-        // Set prompt text instead of selecting an item to avoid green highlight
-        priorityFilter.setPromptText("All");
-        // Don't select any item initially
         
-        priorityFilter.setConverter(new javafx.util.StringConverter<Priority>() {
+        // Set up the button cell (what's displayed when closed)
+        priorityFilter.setButtonCell(new javafx.scene.control.ListCell<Priority>() {
             @Override
-            public String toString(Priority item) {
-                return item == null ? "All Priorities" : item.getDisplayName();
-            }
-            
-            @Override
-            public Priority fromString(String string) {
-                return null;
+            protected void updateItem(Priority item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText("All Priorities");
+                } else {
+                    setText(item.getDisplayName());
+                }
+                setStyle("-fx-text-fill: #ffffff; -fx-background-color: transparent;");
             }
         });
         
-        priorityFilter.getSelectionModel().selectedItemProperty().addListener(
-            (obs, oldValue, newValue) -> filterByPriority(newValue)
-        );
+        // Set up the cell factory for dropdown items - use CSS classes for hover
+        priorityFilter.setCellFactory(listView -> new javafx.scene.control.ListCell<Priority>() {
+            @Override
+            protected void updateItem(Priority item, boolean empty) {
+                super.updateItem(item, empty);
+                
+                // Clear all style classes first
+                getStyleClass().removeAll("priority-dropdown-cell");
+                
+                if (empty || item == null) {
+                    setText("All Priorities");
+                } else {
+                    setText(item.getDisplayName());
+                }
+                
+                if (!empty) {
+                    // Add CSS class for styling via CSS file
+                    getStyleClass().add("priority-dropdown-cell");
+                }
+            }
+        });
+
+        // Set the default selection to "All Priorities" (null value)
+        priorityFilter.getSelectionModel().selectFirst(); // This selects the null item
+        
+        // Add listener for filter changes
+        priorityFilter.getSelectionModel()
+                .selectedItemProperty()
+                .addListener((obs, oldVal, newVal) -> filterByPriority(newVal));
     }
     
     /**
