@@ -4,6 +4,7 @@
     -fx-background-color: #0d0d0d;
     -fx-padding: 0;
     -fx-spacing: 0;
+    -fx-font-family: "SF Pro Display", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif;
 }
 
 .login-container {
@@ -24,13 +25,18 @@
 
 .app-title {
     -fx-text-fill: #ffffff;
-    -fx-font-weight: bold;
+    -fx-font-weight: 600;
+    -fx-font-family: "SF Pro Display", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif;
+    -fx-font-size: 32px;
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.5), 5, 0, 0, 2);
 }
 
 .app-subtitle {
     -fx-text-fill: #b8c6db;
     -fx-opacity: 0.9;
+    -fx-font-family: "SF Pro Display", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif;
+    -fx-font-size: 14px;
+    -fx-font-weight: 400;
 }
 
 .login-form {
@@ -46,13 +52,16 @@
 
 .form-title {
     -fx-text-fill: #ffffff;
-    -fx-font-weight: bold;
+    -fx-font-weight: 600;
+    -fx-font-family: "SF Pro Display", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif;
+    -fx-font-size: 20px;
 }
 
 .field-label {
     -fx-text-fill: #ffffff;
     -fx-font-weight: 500;
     -fx-font-size: 13px;
+    -fx-font-family: "SF Pro Display", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif;
 }
 
 .login-field {
@@ -76,6 +85,14 @@ MFXTextField {
     -fx-background-radius: 6px !important;
     -fx-text-fill: #ffffff !important;
     -fx-prompt-text-fill: rgba(255, 255, 255, 0.6) !important;
+    -fx-font-family: "SF Pro Display", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif;
+    -fx-font-size: 14px !important;
+    -fx-font-weight: 400 !important;
+    -fx-alignment: center-left !important;
+    -fx-padding: 0 12 0 12 !important;
+    -fx-pref-height: 40px !important;
+    -fx-min-height: 40px !important;
+    -fx-max-height: 40px !important;
 }
 
 .mfx-password-field,
@@ -87,25 +104,67 @@ MFXPasswordField {
     -fx-background-radius: 6px !important;
     -fx-text-fill: #ffffff !important;
     -fx-prompt-text-fill: rgba(255, 255, 255, 0.6) !important;
+    -fx-font-family: "SF Pro Display", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif;
+    -fx-font-size: 14px !important;
+    -fx-font-weight: 400 !important;
+    -fx-alignment: center-left !important;
+    -fx-padding: 0 12 0 12 !important;
+    -fx-pref-height: 40px !important;
+    -fx-min-height: 40px !important;
+    -fx-max-height: 40px !important;
 }
 
-/* Inner text field styling for MaterialFX components */
+/* Inner text field styling for MaterialFX components - aggressive targeting */
 .mfx-text-field .text-field,
 .mfx-text-field .text-input,
+.mfx-text-field .text,
 MFXTextField .text-field,
-MFXTextField .text-input {
+MFXTextField .text-input,
+MFXTextField .text,
+.login-field .text-field,
+.login-field .text-input,
+.login-field .text {
     -fx-background-color: transparent !important;
     -fx-text-fill: #ffffff !important;
     -fx-border-color: transparent !important;
+    -fx-font-family: "SF Pro Display", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif !important;
+    -fx-font-size: 14px !important;
+    -fx-font-weight: 400 !important;
+    -fx-alignment: center-left !important;
+    -fx-padding: 8 12 8 12 !important;
+    -fx-translate-y: 0 !important;
 }
 
 .mfx-password-field .text-field,
 .mfx-password-field .text-input,
+.mfx-password-field .text,
 MFXPasswordField .text-field,
-MFXPasswordField .text-input {
+MFXPasswordField .text-input,
+MFXPasswordField .text,
+.login-field .password-field,
+.login-field .password-input {
     -fx-background-color: transparent !important;
     -fx-text-fill: #ffffff !important;
     -fx-border-color: transparent !important;
+    -fx-font-family: "SF Pro Display", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif !important;
+    -fx-font-size: 14px !important;
+    -fx-font-weight: 400 !important;
+    -fx-alignment: center-left !important;
+    -fx-padding: 8 12 8 12 !important;
+    -fx-translate-y: 0 !important;
+}
+
+/* Universal text alignment for any nested text elements in login fields */
+.login-field * {
+    -fx-font-family: "SF Pro Display", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif !important;
+    -fx-font-size: 14px !important;
+    -fx-font-weight: 400 !important;
+    -fx-alignment: center-left !important;
+}
+
+.login-field .text {
+    -fx-fill: #ffffff !important;
+    -fx-text-alignment: center !important;
 }
 
 /* Focused states */
@@ -166,7 +225,9 @@ MFXPasswordField:focused {
 .primary-button {
     -fx-background-color: linear-gradient(to bottom, #00ff85, #00cc6a) !important;
     -fx-text-fill: white !important;
-    -fx-font-weight: bold !important;
+    -fx-font-weight: 600 !important;
+    -fx-font-family: "SF Pro Display", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif;
+    -fx-font-size: 14px !important;
     -fx-background-radius: 6px !important;
     -fx-border-radius: 6px !important;
     -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.2), 3, 0, 0, 1) !important;
@@ -198,6 +259,9 @@ MFXPasswordField:focused {
     -fx-border-radius: 6px;
     -fx-background-radius: 6px;
     -fx-cursor: hand;
+    -fx-font-family: "SF Pro Display", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif;
+    -fx-font-size: 14px;
+    -fx-font-weight: 500;
 }
 
 .secondary-button:hover {
@@ -217,6 +281,9 @@ MFXPasswordField:focused {
 .version-label {
     -fx-text-fill: rgba(255, 255, 255, 0.6);
     -fx-font-style: italic;
+    -fx-font-family: "SF Pro Display", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", sans-serif;
+    -fx-font-size: 11px;
+    -fx-font-weight: 400;
 }
 
 /* Animation Classes */

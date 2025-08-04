@@ -62,6 +62,28 @@ public class LoginController implements Initializable {
         // Set version label
         versionLabel.setText("Open Team v1.0.0");
         
+        // Set up MaterialFX field text alignment
+        Platform.runLater(() -> {
+            // Apply font styling and alignment to text fields
+            String fontStyle = "-fx-font-family: 'SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'Arial', sans-serif; " +
+                              "-fx-font-size: 14px; -fx-font-weight: 400; -fx-alignment: center-left;";
+            
+            usernameField.setStyle(usernameField.getStyle() + "; " + fontStyle);
+            passwordField.setStyle(passwordField.getStyle() + "; " + fontStyle);
+            
+            // Try to set alignment on inner text components if accessible
+            try {
+                usernameField.lookupAll(".text").forEach(node -> {
+                    node.setStyle(node.getStyle() + "; -fx-text-alignment: center;");
+                });
+                passwordField.lookupAll(".text").forEach(node -> {
+                    node.setStyle(node.getStyle() + "; -fx-text-alignment: center;");
+                });
+            } catch (Exception e) {
+                logger.debug("Could not apply inner text alignment: {}", e.getMessage());
+            }
+        });
+        
         // Set up button actions
         loginButton.setOnAction(e -> handleLogin());
         exitButton.setOnAction(e -> Platform.exit());
