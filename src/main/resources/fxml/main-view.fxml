@@ -21,18 +21,17 @@
                   <Region HBox.hgrow="ALWAYS" />
                   <HBox styleClass="top-toolbar" spacing="8" alignment="CENTER">
                      <children>
-                        <VBox spacing="2" styleClass="user-info-container" alignment="CENTER_LEFT">
+                        <!-- Role Display Box -->
+                        <Label fx:id="userInfoLabel" styleClass="role-box" text="User Info" />
+                        <!-- Workspace Info and Navigation in single aligned container -->
+                        <VBox styleClass="workspace-container" alignment="CENTER_LEFT">
                            <children>
-                              <Label fx:id="userInfoLabel" styleClass="user-info-label" text="User Info" />
-                              <HBox spacing="8" alignment="CENTER_LEFT" styleClass="workspace-row">
-                                 <children>
-                                    <Label fx:id="workspaceInfoLabel" styleClass="workspace-info-label" text="Workspace: --" />
-                                    <MFXComboBox fx:id="workspaceNavigationCombo" styleClass="workspace-navigation-combo" visible="false" 
-                                                 minWidth="120" maxWidth="200" prefWidth="150" />
-                                 </children>
-                              </HBox>
+<!--                              <Label fx:id="workspaceInfoLabel" styleClass="workspace-info-label" text="Workspace: &#45;&#45;" />-->
+                              <MFXComboBox fx:id="workspaceNavigationCombo" styleClass="workspace-navigation-combo" visible="false" 
+                                           minWidth="150" maxWidth="200" prefWidth="150" />
                            </children>
                         </VBox>
+                        <!-- Control Buttons aligned in same row -->
                         <MFXButton fx:id="adminButton" styleClass="toolbar-button admin-button" text="👤" visible="false" />
                         <MFXButton onAction="#refreshCurrentView" styleClass="toolbar-button refresh-button" text="🔄" />
                         <MFXButton onAction="#showAbout" styleClass="toolbar-button about-button" text="ℹ️" />

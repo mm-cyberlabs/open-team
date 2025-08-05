@@ -72,16 +72,46 @@
     -fx-spacing: 8;
 }
 
-.top-toolbar .vbox {
-    -fx-spacing: 2;
-    -fx-alignment: center-left;
-    -fx-min-width: 200;
-    -fx-max-width: 300;
+/* Role box styling - same height as ComboBox */
+.role-box {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-alignment: center;
+    -fx-background-color: -mfx-surface;
+    -fx-border-color: -mfx-outline-variant;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8 12 8 12;
+    -fx-min-height: 40px;
+    -fx-max-height: 40px;
+    -fx-pref-height: 40px;
+    -fx-min-width: 120px;
+    -fx-max-width: 200px;
+    -fx-pref-width: 150px;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 3, 0, 0, 1);
 }
 
-.top-toolbar .hbox {
-    -fx-spacing: 8;
+/* Workspace container styling */
+.workspace-container {
+    -fx-spacing: 2;
     -fx-alignment: center-left;
+    -fx-min-width: 150;
+    -fx-max-width: 200;
+    -fx-pref-width: 150;
+}
+
+/* Workspace info label - smaller text above ComboBox */
+.workspace-info-label {
+    -fx-text-fill: -neutral-gray;
+    -fx-font-size: 10px;
+    -fx-font-weight: 400;
+    -fx-text-overrun: ellipsis;
+    -fx-wrap-text: false;
+    -fx-alignment: center-left;
+    -fx-min-height: 14;
+    -fx-padding: 2 0 2 0;
 }
 
 /* Enhanced Tab pane styling with MaterialFX look */
@@ -1331,65 +1361,35 @@
     -fx-text-fill: -mfx-on-surface;
 }
 
-/* User info labels in header */
-.user-info-label {
-    -fx-text-fill: #ffffff;
-    -fx-font-size: 13px;
-    -fx-font-weight: 500;
-    -fx-alignment: center-left;
-    -fx-min-height: 18;
-    -fx-padding: 0 0 2 0;
-}
-
-.workspace-info-label {
-    -fx-text-fill: -neutral-gray;
-    -fx-font-size: 11px;
-    -fx-font-weight: 400;
-    -fx-text-overrun: ellipsis;
-    -fx-wrap-text: false;
-    -fx-alignment: center-left;
-    -fx-min-height: 28;
-    -fx-padding: 6 0 6 0;
-}
-
-/* User info container styling */
-.user-info-container {
-    -fx-spacing: 2;
-    -fx-alignment: center-left;
-    -fx-min-width: 200;
-    -fx-max-width: 300;
-    -fx-pref-width: 250;
-    -fx-min-height: 40;
-    -fx-pref-height: 40;
-}
-
-/* Workspace row styling */
-.workspace-row {
-    -fx-spacing: 8;
-    -fx-alignment: center-left;
-    -fx-fill-width: true;
-    -fx-min-height: 28;
-    -fx-pref-height: 28;
-}
-
-/* Universal ComboBox text truncation and single-line display */
+/* Universal ComboBox text centering fixes for dropdown value display */
 .combo-box .list-cell, .mfx-combo-box .list-cell {
     -fx-text-overrun: ellipsis;
     -fx-ellipsis-string: "...";
     -fx-wrap-text: false;
     -fx-max-width: -1;
+    -fx-alignment: center-left;
 }
 
 .combo-box .list-cell .text, .mfx-combo-box .list-cell .text {
     -fx-text-overrun: ellipsis;
     -fx-wrap-text: false;
+    -fx-text-alignment: center;
 }
 
-/* Ensure all dropdown list cells don't wrap text */
+/* Ensure all dropdown list cells don't wrap text and are centered */
 .combo-box .list-view .list-cell, .mfx-combo-box .list-view .list-cell {
     -fx-text-overrun: ellipsis;
     -fx-ellipsis-string: "...";
     -fx-wrap-text: false;
+    -fx-alignment: center-left;
+}
+
+.combo-box .button-cell, .mfx-combo-box .button-cell {
+    -fx-alignment: center-left;
+}
+
+.combo-box .button-cell .text, .mfx-combo-box .button-cell .text {
+    -fx-text-alignment: center;
 }
 
 /* Universal ComboBox sizing constraints */
@@ -1406,25 +1406,31 @@
     -fx-max-width: 160;
 }
 
-/* Workspace navigation ComboBox */
+/* Workspace navigation ComboBox - enhanced alignment and centering */
 .workspace-navigation-combo {
     -fx-font-size: 11px;
     -fx-pref-width: 150px;
     -fx-max-width: 200px;
     -fx-min-width: 120px;
-    -fx-min-height: 28px;
-    -fx-max-height: 28px;
-    -fx-pref-height: 28px;
+    -fx-min-height: 40px;
+    -fx-max-height: 40px;
+    -fx-pref-height: 40px;
     -fx-padding: 0;
     -fx-alignment: center-left;
+    -fx-background-color: -mfx-surface;
+    -fx-border-color: -mfx-outline-variant;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.15), 3, 0, 0, 1);
 }
 
-/* Workspace navigation ComboBox list cells */
+/* Workspace navigation ComboBox list cells - main display cell */
 .workspace-navigation-combo .list-cell {
     -fx-background-color: transparent;
     -fx-text-fill: #ffffff !important;
     -fx-font-size: 11px;
-    -fx-padding: 6 8 6 8;
+    -fx-padding: 11 12 11 12;
     -fx-alignment: center-left;
     -fx-border-color: transparent;
     -fx-border-width: 0;
@@ -1442,19 +1448,21 @@
     -fx-fill: #ffffff !important;
     -fx-font-size: 11px;
     -fx-text-overrun: ellipsis;
+    -fx-text-alignment: center;
 }
 
 /* Workspace navigation ComboBox button cell - main display area */
 .workspace-navigation-combo .button-cell {
     -fx-background-color: transparent;
     -fx-text-fill: #ffffff !important;
-    -fx-padding: 6 8 6 8;
+    -fx-padding: 11 12 11 12;
     -fx-alignment: center-left;
 }
 
 .workspace-navigation-combo .button-cell .text {
     -fx-fill: #ffffff !important;
     -fx-font-size: 11px;
+    -fx-text-alignment: center;
 }
 
 /* Workspace navigation dropdown */
@@ -1496,7 +1504,7 @@
 .workspace-navigation-combo .arrow-button {
     -fx-background-color: transparent;
     -fx-border-color: transparent;
-    -fx-padding: 6 8 6 4;
+    -fx-padding: 11 12 11 8;
     -fx-min-width: 20px;
     -fx-pref-width: 20px;
     -fx-alignment: center;
@@ -1652,7 +1660,7 @@
     -fx-effect: dropshadow(gaussian, rgba(0, 255, 133, 0.4), 6, 0, 0, 2);
 }
 
-/* ComboBox button cell - the main display area */
+/* ComboBox button cell - the main display area with centered text */
 .priority-filter-combo .list-cell {
     -fx-background-color: transparent;
     -fx-text-fill: #ffffff !important;
@@ -1672,10 +1680,24 @@
     -fx-background-color: transparent;
 }
 
-/* Ensure text content is visible */
+/* Ensure text content is visible and centered */
 .priority-filter-combo .list-cell .text {
     -fx-fill: #ffffff !important;
     -fx-font-size: 14px;
+    -fx-text-alignment: center;
+}
+
+/* Additional text visibility fixes with centering */
+.priority-filter-combo .button-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ffffff !important;
+    -fx-padding: 8 12 8 12;
+    -fx-alignment: center-left;
+}
+
+.priority-filter-combo .button-cell .text {
+    -fx-fill: #ffffff !important;
+    -fx-text-alignment: center;
 }
 
 /* Arrow button - move it to the right and make sure it doesn't overlap text */
@@ -1752,10 +1774,12 @@
     -fx-background-color: transparent;
     -fx-text-fill: #ffffff !important;
     -fx-padding: 8 12 8 12;
+    -fx-alignment: center-left;
 }
 
 .priority-filter-combo .button-cell .text {
     -fx-fill: #ffffff !important;
+    -fx-text-alignment: center;
 }
 
 /* Ensure no overlays from focus or selection */
@@ -1827,7 +1851,7 @@
     -fx-effect: dropshadow(gaussian, rgba(0, 255, 133, 0.4), 6, 0, 0, 2);
 }
 
-/* ComboBox button cell - the main display area */
+/* ComboBox button cell - the main display area with centered text */
 .status-filter-combo .list-cell {
     -fx-background-color: transparent;
     -fx-text-fill: #ffffff !important;
@@ -1847,10 +1871,24 @@
     -fx-background-color: transparent;
 }
 
-/* Ensure text content is visible */
+/* Ensure text content is visible and centered */
 .status-filter-combo .list-cell .text {
     -fx-fill: #ffffff !important;
     -fx-font-size: 14px;
+    -fx-text-alignment: center;
+}
+
+/* Additional status combo fixes with centering */
+.status-filter-combo .button-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #ffffff !important;
+    -fx-padding: 8 12 8 12;
+    -fx-alignment: center-left;
+}
+
+.status-filter-combo .button-cell .text {
+    -fx-fill: #ffffff !important;
+    -fx-text-alignment: center;
 }
 
 /* Arrow button - move it to the right and make sure it doesn't overlap text */
@@ -1945,15 +1983,17 @@
     -fx-text-fill: #ffffff !important;
 }
 
-/* Additional status combo fixes */
+/* Additional status combo fixes with centering */
 .status-filter-combo .button-cell {
     -fx-background-color: transparent;
     -fx-text-fill: #ffffff !important;
     -fx-padding: 8 12 8 12;
+    -fx-alignment: center-left;
 }
 
 .status-filter-combo .button-cell .text {
     -fx-fill: #ffffff !important;
+    -fx-text-alignment: center;
 }
 
 /* Ensure no overlays from focus or selection */
@@ -2019,6 +2059,7 @@
 .environment-filter-combo .list-cell .text {
     -fx-fill: #ffffff !important;
     -fx-font-size: 14px;
+    -fx-text-alignment: center;
 }
 
 .environment-filter-combo .arrow-button {
@@ -2112,10 +2153,12 @@
     -fx-background-color: transparent;
     -fx-text-fill: #ffffff !important;
     -fx-padding: 8 12 8 12;
+    -fx-alignment: center-left;
 }
 
 .environment-filter-combo .button-cell .text {
     -fx-fill: #ffffff !important;
+    -fx-text-alignment: center;
 }
 
 .environment-filter-combo:focused .list-cell,
@@ -2179,6 +2222,7 @@
 .deployment-status-filter-combo .list-cell .text {
     -fx-fill: #ffffff !important;
     -fx-font-size: 14px;
+    -fx-text-alignment: center;
 }
 
 .deployment-status-filter-combo .arrow-button {
@@ -2272,10 +2316,12 @@
     -fx-background-color: transparent;
     -fx-text-fill: #ffffff !important;
     -fx-padding: 8 12 8 12;
+    -fx-alignment: center-left;
 }
 
 .deployment-status-filter-combo .button-cell .text {
     -fx-fill: #ffffff !important;
+    -fx-text-alignment: center;
 }
 
 .deployment-status-filter-combo:focused .list-cell,
