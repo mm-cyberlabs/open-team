@@ -132,9 +132,9 @@ public class MainController implements Initializable {
                 if (currentUser.getWorkspace() != null) {
                     workspaceInfoLabel.setText("Workspace: " + currentUser.getWorkspace().getName());
                 } else if (currentUser.isSuperAdmin()) {
-                    workspaceInfoLabel.setText("Role: System Administrator");
+//                    workspaceInfoLabel.setText("Role: System Administrator");
                 } else {
-                    workspaceInfoLabel.setText("Workspace: --");
+                    workspaceInfoLabel.setText("Workspace: Not Selected");
                 }
             }
         }

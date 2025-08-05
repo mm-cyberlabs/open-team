@@ -11,7 +11,7 @@
             <Region HBox.hgrow="ALWAYS" />
             <CheckBox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
             <Label styleClass="filter-label" text="Priority:" />
-            <ComboBox fx:id="priorityFilter" prefWidth="140.0" styleClass="priority-filter-combo" />
+            <ComboBox fx:id="priorityFilter" prefWidth="140.0" minWidth="120.0" maxWidth="160.0" styleClass="priority-filter-combo" />
             <MFXButton onAction="#showHighPriority" styleClass="toolbar-button" text="High Priority" />
             <MFXButton fx:id="updateButton" styleClass="update-button" text="Update" />
          </children>

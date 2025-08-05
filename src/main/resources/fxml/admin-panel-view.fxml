@@ -53,7 +53,7 @@
                               <MFXButton fx:id="addWorkspaceButton" styleClass="primary-button" text="Add Workspace" />
                               <MFXButton fx:id="refreshWorkspacesButton" styleClass="secondary-button" text="Refresh" />
                               <Region HBox.hgrow="ALWAYS" />
-                              <TextField fx:id="workspaceSearchField" prefWidth="200.0" promptText="Search workspaces..." styleClass="search-field" />
+                              <TextField fx:id="workspaceSearchField" prefWidth="200.0" minWidth="180.0" maxWidth="220.0" promptText="Search workspaces..." styleClass="search-field" />
                            </children>
                         </HBox>
                         
@@ -88,7 +88,7 @@
                               <MFXButton fx:id="addUserButton" styleClass="primary-button" text="Add User" />
                               <MFXButton fx:id="refreshUsersButton" styleClass="secondary-button" text="Refresh" />
                               <Region HBox.hgrow="ALWAYS" />
-                              <TextField fx:id="userSearchField" prefWidth="200.0" promptText="Search users..." styleClass="search-field" />
+                              <TextField fx:id="userSearchField" prefWidth="200.0" minWidth="180.0" maxWidth="220.0" promptText="Search users..." styleClass="search-field" />
                            </children>
                         </HBox>
                         

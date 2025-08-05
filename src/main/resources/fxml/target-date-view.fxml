@@ -10,10 +10,10 @@
          <children>
             <Label styleClass="view-title" text="Important Target Dates" />
             <Region HBox.hgrow="ALWAYS" />
-            <TextField fx:id="searchField" prefWidth="200.0" promptText="Search target dates..." styleClass="search-field" />
+            <TextField fx:id="searchField" prefWidth="200.0" minWidth="180.0" maxWidth="220.0" promptText="Search target dates..." styleClass="search-field" />
             <CheckBox fx:id="showArchivedCheckBox" styleClass="archive-checkbox" text="Show Archived" />
             <Label styleClass="filter-label" text="Status:" />
-            <ComboBox fx:id="statusFilter" prefWidth="140.0" styleClass="status-filter-combo" />
+            <ComboBox fx:id="statusFilter" prefWidth="140.0" minWidth="120.0" maxWidth="160.0" styleClass="status-filter-combo" />
          </children>
       </HBox>
       

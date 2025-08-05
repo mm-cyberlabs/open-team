@@ -19,15 +19,16 @@
                   </ImageView>
                   <Label styleClass="app-title" text="Open Team" />
                   <Region HBox.hgrow="ALWAYS" />
-                  <HBox styleClass="top-toolbar" spacing="8">
+                  <HBox styleClass="top-toolbar" spacing="8" alignment="CENTER">
                      <children>
-                        <VBox spacing="2">
+                        <VBox spacing="2" styleClass="user-info-container" alignment="CENTER_LEFT">
                            <children>
                               <Label fx:id="userInfoLabel" styleClass="user-info-label" text="User Info" />
-                              <HBox spacing="8" alignment="CENTER_LEFT">
+                              <HBox spacing="8" alignment="CENTER_LEFT" styleClass="workspace-row">
                                  <children>
                                     <Label fx:id="workspaceInfoLabel" styleClass="workspace-info-label" text="Workspace: --" />
-                                    <MFXComboBox fx:id="workspaceNavigationCombo" styleClass="workspace-navigation-combo" visible="false" />
+                                    <MFXComboBox fx:id="workspaceNavigationCombo" styleClass="workspace-navigation-combo" visible="false" 
+                                                 minWidth="120" maxWidth="200" prefWidth="150" />
                                  </children>
                               </HBox>
                            </children>

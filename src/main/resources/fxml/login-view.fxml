@@ -10,6 +10,8 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <VBox alignment="CENTER" fillWidth="true" styleClass="login-container" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.openteam.controller.LoginController">
    <children>
       <!-- Spacer for vertical centering -->
@@ -18,6 +20,11 @@
       <!-- Header Section -->
       <VBox alignment="CENTER" styleClass="login-header">
          <children>
+            <ImageView fitHeight="150.0" fitWidth="150.0" pickOnBounds="true" preserveRatio="true">
+               <image>
+                  <Image url="@../icons/openteam-logo.png" />
+               </image>
+            </ImageView>
             <Label styleClass="app-title" text="Open Team">
                <font>
                   <Font name="System Bold" size="32.0" />
