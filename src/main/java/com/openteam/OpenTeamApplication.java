@@ -11,6 +11,11 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /**
  * Main application class for Open Team Communication App.
  * JavaFX desktop application for team communication and deployment tracking.
@@ -121,21 +126,55 @@ public class OpenTeamApplication extends Application {
     }
     
     /**
+     * Ensures that the OpenTeam directories exist in the user's home directory.
+     * Creates ~/.openteam and ~/.openteam/logs directories if they don't exist.
+     */
+    private static void ensureOpenTeamDirectoriesExist() {
+        try {
+            String userHome = System.getProperty("user.home");
+            Path openTeamDir = Paths.get(userHome, ".openteam");
+            Path logsDir = openTeamDir.resolve("logs");
+            
+            // Create directories if they don't exist
+            if (!Files.exists(openTeamDir)) {
+                Files.createDirectories(openTeamDir);
+                System.out.println("Created OpenTeam directory: " + openTeamDir);
+            }
+            
+            if (!Files.exists(logsDir)) {
+                Files.createDirectories(logsDir);
+                System.out.println("Created OpenTeam logs directory: " + logsDir);
+            }
+            
+            // Set system property for logback to use (although logback.xml already configures this)
+            System.setProperty("openteam.logs.dir", logsDir.toString());
+            
+        } catch (Exception e) {
+            System.err.println("Failed to create OpenTeam directories: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
      * Main method to launch the JavaFX application.
      * 
      * @param args Command line arguments
      */
     public static void main(String[] args) {
+        // Ensure OpenTeam directories exist before logging starts
+        ensureOpenTeamDirectoriesExist();
+        
         logger.info("Open Team Application main method called");
         
         // Set system properties for JavaFX and macOS
         System.setProperty("javafx.application.name", APPLICATION_TITLE);
         
-        // macOS specific properties
+        // Ensure JavaFX toolkit initialization on macOS
         if (System.getProperty("os.name").toLowerCase().contains("mac")) {
             System.setProperty("apple.laf.useScreenMenuBar", "true");
             System.setProperty("apple.awt.application.name", APPLICATION_TITLE);
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", APPLICATION_TITLE);
+            System.setProperty("javafx.preloader", "");
             
             // Try to set dock icon at startup
             try {
@@ -148,7 +187,32 @@ public class OpenTeamApplication extends Application {
             }
         }
         
-        // Launch JavaFX application
-        launch(args);
+        // Initialize JavaFX platform if needed
+        try {
+            // Ensure Platform is initialized
+            javafx.application.Platform.setImplicitExit(true);
+            
+            // Launch JavaFX application
+            launch(args);
+        } catch (Exception e) {
+            logger.error("Failed to launch JavaFX application", e);
+            
+            // If JavaFX fails to initialize, provide diagnostic information
+            System.err.println("JavaFX Application Launch Failed:");
+            System.err.println("Java Version: " + System.getProperty("java.version"));
+            System.err.println("JavaFX Version: " + System.getProperty("javafx.version", "Unknown"));
+            System.err.println("OS: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
+            System.err.println("Architecture: " + System.getProperty("os.arch"));
+            
+            // Try to check if JavaFX modules are available
+            try {
+                Class.forName("javafx.application.Application");
+                System.err.println("JavaFX Application class found");
+            } catch (ClassNotFoundException cnfe) {
+                System.err.println("JavaFX Application class NOT found - JavaFX modules missing");
+            }
+            
+            throw new RuntimeException("JavaFX application launch failed", e);
+        }
     }
 }

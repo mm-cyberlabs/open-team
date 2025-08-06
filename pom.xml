@@ -186,7 +186,7 @@
                 </executions>
             </plugin>
 
-            <!-- Maven Shade Plugin for creating fat JAR -->
+            <!-- Maven Shade Plugin for creating fat JAR with JavaFX module fixes -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -213,7 +213,34 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/module-info.class</exclude>
+                                        <exclude>module-info.class</exclude>
                                     </excludes>
+                                </filter>
+                                <!-- Keep only platform-specific JavaFX dependencies -->
+                                <filter>
+                                    <artifact>org.openjfx:javafx-controls:jar:mac-aarch64:*</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.openjfx:javafx-graphics:jar:mac-aarch64:*</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.openjfx:javafx-base:jar:mac-aarch64:*</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>org.openjfx:javafx-fxml:jar:mac-aarch64:*</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
                                 </filter>
                             </filters>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
@@ -234,7 +261,49 @@
             </plugin>
 
             <!-- Note: JavaFX jpackage plugin removed to avoid build issues -->
-            <!-- Use ./create-macos-app.sh script instead for creating native macOS app -->
+            <!-- Use ./create-portable-macos-app.sh script instead for creating portable macOS app -->
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Profile for creating portable macOS app with embedded JRE -->
+        <profile>
+            <id>portable-macos</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.panteleyev</groupId>
+                        <artifactId>jpackage-maven-plugin</artifactId>
+                        <version>1.6.5</version>
+                        <configuration>
+                            <name>OpenTeam</name>
+                            <appVersion>${project.version}</appVersion>
+                            <vendor>OpenTeam</vendor>
+                            <description>OpenTeam Communication Application</description>
+                            <copyright>Copyright © 2024 OpenTeam. All rights reserved.</copyright>
+                            <input>target/jpackage-input</input>
+                            <destination>target</destination>
+                            <mainJar>open-team-app-${project.version}-shaded.jar</mainJar>
+                            <mainClass>com.openteam.OpenTeamApplication</mainClass>
+                            <type>APP_IMAGE</type>
+                            <javaOptions>
+                                <option>-Xmx1024m</option>
+                                <option>-Dfile.encoding=UTF-8</option>
+                                <option>-Djava.awt.headless=false</option>
+                            </javaOptions>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>jpackage</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jpackage</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

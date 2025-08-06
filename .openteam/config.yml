@@ -1,0 +1,8 @@
+database:
+  url: jdbc:postgresql://localhost:5432/openteam_test
+  username: test
+  password: test
+  driver: org.postgresql.Driver
+
+application:
+  refreshInterval: 10

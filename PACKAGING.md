@@ -2,79 +2,64 @@
 
 This guide explains how to package the OpenTeam JavaFX application for macOS distribution.
 
-## 🚀 Quick Start - Create macOS App Bundle
+## 🚀 Quick Start - Create Portable macOS App
 
-The easiest way to create a native macOS application:
+The easiest way to create a **truly portable** macOS application with embedded JRE:
 
 ```bash
 # 1. Make sure you're in the project root directory
 cd /path/to/open-team
 
-# 2. Run the packaging script
+# 2. Run the portable packaging script
+./create-portable-macos-app.sh
+```
+
+This will create `target/OpenTeam.app` that:
+- **Works on ANY macOS machine** (no Java installation required)
+- Contains embedded Java 21 runtime
+- Is completely self-contained
+- Only needs configuration file: `~/.openteam/config.yml`
+
+## 📋 Prerequisites (Developer Only)
+
+**For building the portable app:**
+- **Java 21**: Make sure you have Java 21 installed (for building only)
+- **Maven**: For building the project
+- **macOS**: This guide is specific to macOS packaging
+
+**For end users:** NO prerequisites! The portable app includes everything needed.
+
+## 🛠️ Packaging Methods
+
+### Method 1: Portable App with Embedded JRE (RECOMMENDED)
+
+Create a fully self-contained app:
+
+```bash
+# Build portable app with embedded Java runtime
+./create-portable-macos-app.sh
+
+# Alternative: Using Maven profile
+mvn clean package -Pportable-macos
+```
+
+**Benefits:**
+- ✅ No Java installation required on target machines
+- ✅ Works on any macOS 10.15+ system
+- ✅ True "double-click to run" experience
+- ✅ Professional distribution ready
+
+### Method 2: Legacy App Bundle (Requires Java on target)
+
+Create traditional app bundle (requires Java 21 on target machine):
+
+```bash
 ./create-macos-app.sh
 ```
 
-This will create `target/OpenTeam.app` that you can:
-- Double-click to run
-- Copy to `/Applications/` 
-- Distribute to other macOS users
+**Note:** This method is deprecated as it requires users to install Java 21.
 
-## 📋 Prerequisites
-
-- **Java 21**: Make sure you have Java 21 installed
-- **Maven**: For building the project
-- **macOS**: This guide is specific to macOS packaging
-- **PostgreSQL**: Database should be running for the app to work
-
-## 🛠️ Manual Build Steps
-
-If you want to understand the process or customize it:
-
-### 1. Build the Fat JAR
-
-```bash
-mvn clean package -DskipTests
-```
-
-This creates:
-- `target/open-team-app-1.0.0.jar` - Regular JAR
-- `target/open-team-app-1.0.0-shaded.jar` - Fat JAR with all dependencies
-
-### 2. Test the Fat JAR
-
-```bash
-java -jar target/open-team-app-1.0.0-shaded.jar
-```
-
-### 3. Create macOS App Bundle (Manual)
-
-```bash
-# Create app structure
-mkdir -p "OpenTeam.app/Contents/MacOS"
-mkdir -p "OpenTeam.app/Contents/Resources" 
-mkdir -p "OpenTeam.app/Contents/Java"
-
-# Copy JAR
-cp target/open-team-app-1.0.0-shaded.jar OpenTeam.app/Contents/Java/OpenTeam.jar
-
-# Create launcher script (see create-macos-app.sh for details)
-# Create Info.plist (see create-macos-app.sh for details)
-```
-
-## 🎯 Alternative Packaging Methods
-
-### Method 1: JavaFX jpackage (Advanced)
-
-For a truly native app with embedded JRE:
-
-```bash
-# This requires the jpackage tool and more complex setup
-mvn clean package
-mvn jlink:jlink
-mvn jpackage:jpackage
-```
-
-### Method 2: Simple JAR Distribution
+### Method 3: Simple JAR Distribution
 
 For developers who want to run from command line:
 
@@ -84,18 +69,9 @@ mvn clean package -DskipTests
 java -jar target/open-team-app-1.0.0-shaded.jar
 ```
 
-### Method 3: Script Wrapper
-
-Create a simple shell script:
-
-```bash
-#!/bin/bash
-java -Xmx1024m -jar open-team-app-1.0.0-shaded.jar
-```
-
 ## 📁 App Bundle Structure
 
-The created `.app` bundle has this structure:
+The portable app bundle has this structure:
 
 ```
 OpenTeam.app/
@@ -103,37 +79,21 @@ OpenTeam.app/
 │   ├── Info.plist          # App metadata
 │   ├── PkgInfo             # Package type info
 │   ├── MacOS/
-│   │   └── OpenTeam        # Launcher script
+│   │   └── OpenTeam        # Native launcher
 │   ├── Resources/
 │   │   └── OpenTeam.icns   # App icon
-│   └── Java/
-│       └── OpenTeam.jar    # Application JAR
+│   ├── runtime/            # ← Embedded Java 21 JRE (NEW!)
+│   │   └── Contents/
+│   │       └── Home/
+│   └── app/
+│       └── open-team-app-1.0.0-shaded.jar
 ```
 
 ## 🔧 Configuration Requirements
 
-Before running the app, users need:
+**End users only need:**
 
-### 1. Database Setup
-
-```bash
-# Install PostgreSQL (if not already installed)
-brew install postgresql
-
-# Start PostgreSQL
-brew services start postgresql
-
-# Run the SQL scripts (in order):
-psql -U postgres -f src/main/resources/sql/01-create-database.sql
-psql -U postgres -d openteam -f src/main/resources/sql/02-create-schema.sql  
-psql -U postgres -d openteam -f src/main/resources/sql/03-create-tables.sql
-psql -U postgres -d openteam -f src/main/resources/sql/04-sample-data.sql
-
-# For existing databases, run migration:
-psql -U postgres -d openteam -f src/main/resources/sql/05-migrate-activities-to-target-dates.sql
-```
-
-### 2. Configuration File
+### 1. Configuration File
 
 Create `~/.openteam/config.yml`:
 
@@ -148,6 +108,13 @@ application:
   refreshInterval: 10
 ```
 
+### 2. Database Access
+
+- PostgreSQL server running and accessible
+- Network connectivity to the database
+
+**That's it!** No Java installation, no Maven, no development tools required.
+
 ## 🚀 Distribution
 
 ### For Personal Use
@@ -158,34 +125,37 @@ cp -r target/OpenTeam.app /Applications/
 
 ### For Team Distribution
 ```bash
-# Create a ZIP file
+# Create a ZIP file for easy sharing
 cd target
-zip -r OpenTeam-1.0.0-macOS.zip OpenTeam.app
+zip -r OpenTeam-1.0.0-macOS-portable.zip OpenTeam.app
 
-# Or create a DMG (requires additional tools)
-# hdiutil create -volname "OpenTeam" -srcfolder OpenTeam.app -ov -format UDZO OpenTeam-1.0.0.dmg
+# Users just need to:
+# 1. Download and unzip
+# 2. Copy OpenTeam.app to Applications
+# 3. Create ~/.openteam/config.yml
+# 4. Run the app
 ```
 
 ## 🔍 Troubleshooting
 
 ### App Won't Start
 1. Check Console.app for error messages
-2. Verify Java 21 is installed: `java -version`
-3. Test the JAR directly: `java -jar OpenTeam.app/Contents/Java/OpenTeam.jar`
+2. Verify the config file exists: `ls -la ~/.openteam/config.yml`
+3. Test database connection from terminal
 
 ### Database Connection Issues  
 1. Ensure PostgreSQL is running: `brew services list | grep postgresql`
-2. Check config file exists: `ls -la ~/.openteam/config.yml`
+2. Check config file format (YAML syntax)
 3. Test database connection: `psql -U openteam_user -d openteam`
 
 ### Performance Issues
-- Increase memory in the launcher script: `-Xmx2048m`
-- Check system requirements (macOS 10.15+)
+- The app includes optimized JVM settings for 1GB memory allocation
+- Minimum system requirements: macOS 10.15+ (Catalina or later)
 
 ## 📝 Customization
 
 ### Change App Name
-Edit `create-macos-app.sh` and modify:
+Edit `create-portable-macos-app.sh` and modify:
 ```bash
 APP_NAME="YourAppName"
 BUNDLE_ID="com.yourcompany.yourapp"
@@ -195,19 +165,33 @@ BUNDLE_ID="com.yourcompany.yourapp"
 Replace `src/main/resources/icons/openteam-logo.png` with your icon (1024x1024 PNG recommended).
 
 ### Modify JVM Options
-Edit the launcher script in `OpenTeam.app/Contents/MacOS/OpenTeam` to add custom Java options.
+Edit the script and adjust:
+```bash
+--java-options "-Xmx2048m"  # Increase memory
+--java-options "-Dmy.custom.property=value"  # Add custom properties
+```
 
-## ✅ Verification Checklist
+## ✅ Distribution Checklist
 
 Before distributing:
 
-- [ ] App launches without errors
-- [ ] Database connection works
+- [ ] App launches without errors on your machine
+- [ ] App launches on a different Mac (test portability)
+- [ ] Database connection works with config file
 - [ ] All features function correctly
-- [ ] Icon appears properly in dock
+- [ ] Icon appears properly in dock and Finder
 - [ ] App can be copied to Applications folder
-- [ ] App works on a clean macOS system (test on another Mac)
+- [ ] ZIP file extracts correctly
+
+## 🎯 Migration from Legacy Method
+
+If you were using the old `create-macos-app.sh`:
+
+1. **Switch to new script:** Use `./create-portable-macos-app.sh`
+2. **Update documentation:** Tell users they don't need Java anymore
+3. **Test thoroughly:** Verify the embedded JRE works on target machines
+4. **Redistribute:** Create new ZIP files with the portable app
 
 ---
 
-**Note**: This packaging creates a macOS app bundle that requires Java 21 to be installed on the target system. For a completely self-contained app with embedded JRE, use the jpackage method (more complex setup required).
+**Key Advantage:** The portable method creates apps that work on **any macOS machine** with just the configuration file. No more "install Java first" instructions!

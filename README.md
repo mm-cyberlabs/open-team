@@ -88,6 +88,30 @@ chmod +x run-app.sh
 java -jar target/open-team-app-1.0.0.jar
 ```
 
+## Packaging for Distribution (macOS)
+
+### Create Portable macOS App (Recommended)
+
+Create a self-contained `.app` bundle with embedded Java runtime:
+
+```bash
+# Creates OpenTeam.app with embedded JRE - works on any Mac!
+./create-portable-macos-app.sh
+```
+
+**Benefits:**
+- ✅ No Java installation required on target machines
+- ✅ Works on any macOS 10.15+ system  
+- ✅ Professional "double-click to run" experience
+- ✅ Only requires user configuration file
+
+**End users just need:**
+1. Download and copy `OpenTeam.app` to Applications
+2. Create `~/.openteam/config.yml`
+3. Run the app
+
+See [PACKAGING.md](PACKAGING.md) for detailed packaging instructions.
+
 ## Project Structure
 
 ```
