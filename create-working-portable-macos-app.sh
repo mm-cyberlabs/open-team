@@ -95,7 +95,15 @@ if [ -f "src/main/resources/icons/openteam-logo.png" ]; then
     
     # Create the ICNS file
     ICON_FILE="$RESOURCES_DIR/${APP_NAME}.icns"
-    iconutil -c icns "$ICON_SET_DIR" --output "$ICON_FILE" 2>/dev/null && echo "   Icon created successfully"
+    if iconutil -c icns "$ICON_SET_DIR" --output "$ICON_FILE" 2>/dev/null; then
+        echo "   Icon created successfully: $ICON_FILE"
+        # Verify the icon file was created
+        if [ -f "$ICON_FILE" ]; then
+            echo "   Icon file verified: $(file "$ICON_FILE")"
+        fi
+    else
+        echo "   Warning: Icon creation failed"
+    fi
     rm -rf "$TEMP_DIR"
 fi
 
@@ -160,7 +168,23 @@ fi
 
 log_message "Starting OpenTeam application..."
 
-# Launch the application with proper configuration for shaded JAR with embedded JavaFX
+# Check if we have the JavaFX JARs in the lib directory - use them if available
+JAVAFX_PATH=""
+if [ -d "$JAVA_DIR/lib" ]; then
+    JAVAFX_JARS=$(ls "$JAVA_DIR/lib"/javafx-*-mac-aarch64.jar 2>/dev/null | tr '\n' ':')
+    if [ -n "$JAVAFX_JARS" ]; then
+        log_message "Found platform-specific JavaFX JARs, using module path approach"
+        JAVAFX_PATH="--module-path $JAVAFX_JARS --add-modules javafx.controls,javafx.fxml"
+    fi
+fi
+
+if [ -z "$JAVAFX_PATH" ]; then
+    log_message "Using shaded JAR approach for JavaFX"
+fi
+
+log_message "JavaFX configuration: $JAVAFX_PATH"
+
+# Launch the application with proper configuration
 exec "$JAVA_EXECUTABLE" \
     -Xms256m \
     -Xmx1024m \
@@ -174,6 +198,7 @@ exec "$JAVA_EXECUTABLE" \
     --add-opens=java.base/java.text=ALL-UNNAMED \
     --add-opens=java.base/java.util=ALL-UNNAMED \
     --add-opens=java.desktop/java.awt.font=ALL-UNNAMED \
+    $JAVAFX_PATH \
     -jar "$MAIN_JAR" \
     >> "$LOG_FILE" 2>&1
 EOF
@@ -234,13 +259,21 @@ echo "APPL????" > "$CONTENTS_DIR/PkgInfo"
 
 # Remove quarantine attributes and set proper permissions
 echo "🔓 Removing quarantine attributes and setting permissions..."
-xattr -cr "$APP_DIR" 2>/dev/null || echo "   (quarantine removal failed - this is usually okay)"
+xattr -c "$APP_DIR" 2>/dev/null || echo "   (app quarantine removal failed - this is usually okay)"
+xattr -c "$APP_DIR/Contents/Info.plist" 2>/dev/null || true
+xattr -c "$APP_DIR/Contents/Resources/OpenTeam.icns" 2>/dev/null || true
 
 # Set proper permissions
 chmod +x "$MACOS_DIR/$APP_NAME"
 find "$APP_DIR" -name "*.dylib" -exec chmod +x {} \; 2>/dev/null || true
 find "$RUNTIME_DIR" -name "java" -exec chmod +x {} \; 2>/dev/null || true
 find "$RUNTIME_DIR" -type f -exec chmod +x {} \; 2>/dev/null || true
+
+# Set custom icon flag and refresh
+echo "🎨 Setting custom icon attributes..."
+SetFile -a C "$APP_DIR" 2>/dev/null || echo "   (SetFile not available - icon may not display immediately)"
+touch "$APP_DIR/Contents/Info.plist"
+touch "$APP_DIR"
 
 echo ""
 echo "🎉 WORKING PORTABLE macOS Application Bundle Created!"
