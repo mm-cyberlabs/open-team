@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# WORKING PORTABLE macOS APP BUILDER
+# Portable macOS APP BUILDER
 # Creates a truly portable .app that works on any macOS system with embedded Java runtime
 # Fixes JavaFX runtime issues and ensures complete embedded runtime
 
@@ -12,8 +12,8 @@ BUNDLE_ID="com.openteam.app"
 MAIN_CLASS="com.openteam.OpenTeamApplication"
 MAIN_JAR="open-team-app-${APP_VERSION}-shaded.jar"
 
-echo "🚀 Building WORKING PORTABLE OpenTeam macOS Application..."
-echo "   This will create a completely self-contained app that actually works!"
+echo "🚀 Building portable OpenTeam macOS Application..."
+echo "   This will create a completely self-contained app that works on any macOS system!"
 
 # Clean previous builds
 echo "🧹 Cleaning previous builds..."
@@ -66,7 +66,11 @@ echo "   All runtime dependencies copied to app bundle"
 
 # Create a complete embedded Java runtime using jlink
 echo "☕ Creating complete embedded Java runtime with jlink..."
-JAVA_HOME_FOR_JLINK="/Library/Java/JavaVirtualMachines/jdk-21.0.8.jdk/Contents/Home"
+JAVA_HOME_FOR_JLINK="$(/usr/libexec/java_home -v 21 2>/dev/null || echo "$JAVA_HOME")"
+if [ -z "$JAVA_HOME_FOR_JLINK" ]; then
+    echo "❌ Error: Java 21 JDK not found. Please install JDK 21."
+    exit 1
+fi
 
 # Use jlink to create a complete runtime with standard Java modules including jdk.unsupported for JavaFX
 "$JAVA_HOME_FOR_JLINK/bin/jlink" \
