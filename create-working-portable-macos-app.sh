@@ -52,11 +52,17 @@ mkdir -p "$MACOS_DIR" "$RESOURCES_DIR" "$JAVA_DIR"
 echo "📦 Copying application JAR..."
 cp "$SHADED_JAR" "$JAVA_DIR/${APP_NAME}.jar"
 
-# Copy all platform-specific JavaFX JARs to ensure JavaFX works
-echo "🎬 Ensuring JavaFX platform libraries are available..."
+# Copy ALL dependencies to ensure app works on any system
+echo "📦 Copying all application dependencies..."
 mkdir -p "$JAVA_DIR/lib"
-cp target/lib/javafx-*-mac-aarch64.jar "$JAVA_DIR/lib/" 2>/dev/null || echo "   (Platform-specific JavaFX JARs not found in lib - they should be in shaded JAR)"
-echo "   Platform-specific JavaFX JARs copied to app bundle"
+cp target/lib/*.jar "$JAVA_DIR/lib/" 2>/dev/null || echo "   (No lib dependencies found)"
+
+# Remove test-related JARs that aren't needed at runtime
+echo "🧹 Removing test dependencies from app bundle..."
+cd "$JAVA_DIR/lib" && rm -f junit-* testfx-* hamcrest-* assertj-* apiguardian-* opentest4j-* junit-platform-* 2>/dev/null || true
+cd - > /dev/null
+
+echo "   All runtime dependencies copied to app bundle"
 
 # Create a complete embedded Java runtime using jlink
 echo "☕ Creating complete embedded Java runtime with jlink..."
