@@ -1,51 +1,91 @@
 #!/bin/bash
 
+# OpenTeam Portable App Launcher
+# This script ensures proper startup with logging and error handling
+
 # Get the directory where this script is located
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-APP_ROOT="$DIR/.."
-JAVA_DIR="$APP_ROOT/Java"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+APP_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+CONTENTS_DIR="$APP_DIR/Contents"
+JAVA_DIR="$CONTENTS_DIR/Java"
+RUNTIME_DIR="$CONTENTS_DIR/runtime"
+
+# Ensure ~/.openteam directory structure exists
+OPENTEAM_DIR="$HOME/.openteam"
+LOGS_DIR="$OPENTEAM_DIR/logs"
+
+echo "Creating OpenTeam directories..."
+mkdir -p "$LOGS_DIR"
 
 # Set up logging
-LOG_DIR="$HOME/.openteam/logs"
-mkdir -p "$LOG_DIR"
-LOG_FILE="$LOG_DIR/openteam-$(date +%Y%m%d-%H%M%S).log"
+LOG_FILE="$LOGS_DIR/openteam-$(date +%Y%m%d-%H%M%S).log"
 
-echo "=== OpenTeam macOS App Launcher ===" >> "$LOG_FILE"
-echo "Launch Time: $(date)" >> "$LOG_FILE"
-echo "Script Location: $0" >> "$LOG_FILE"
-echo "APP_ROOT: $APP_ROOT" >> "$LOG_FILE"
-echo "JAVA_DIR: $JAVA_DIR" >> "$LOG_FILE"
+# Function to log messages
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') $1" | tee -a "$LOG_FILE"
+}
 
-# Use Java 21 explicitly
-JAVA_CMD="/Library/Java/JavaVirtualMachines/jdk-21.0.8.jdk/Contents/Home/bin/java"
-if [ ! -f "$JAVA_CMD" ]; then
-    echo "Java 21 not found at $JAVA_CMD, trying system java" >> "$LOG_FILE"
-    JAVA_CMD="java"
+log_message "=== OpenTeam Portable App Starting ==="
+log_message "App directory: $APP_DIR"
+log_message "Java runtime: $RUNTIME_DIR"
+log_message "Main JAR: $JAVA_DIR/OpenTeam.jar"
+log_message "Log file: $LOG_FILE"
+
+# Check if embedded runtime exists
+JAVA_EXECUTABLE="$RUNTIME_DIR/bin/java"
+if [ ! -f "$JAVA_EXECUTABLE" ]; then
+    log_message "ERROR: Embedded Java runtime not found at: $JAVA_EXECUTABLE"
+    exit 1
 fi
 
-echo "Java Command: $JAVA_CMD" >> "$LOG_FILE"
-"$JAVA_CMD" -version >> "$LOG_FILE" 2>&1
+log_message "Using embedded Java runtime: $JAVA_EXECUTABLE"
 
-# Build module path with JavaFX JARs only  
-MODULE_PATH="$JAVA_DIR/lib/javafx-base-21-mac-aarch64.jar:$JAVA_DIR/lib/javafx-controls-21-mac-aarch64.jar:$JAVA_DIR/lib/javafx-fxml-21-mac-aarch64.jar:$JAVA_DIR/lib/javafx-graphics-21-mac-aarch64.jar"
-
-# Build classpath with main JAR and essential dependencies
-CLASSPATH="$JAVA_DIR/OpenTeam-main.jar:$JAVA_DIR/lib/postgresql-42.7.1.jar:$JAVA_DIR/lib/HikariCP-5.1.0.jar:$JAVA_DIR/lib/jackson-dataformat-yaml-2.16.1.jar:$JAVA_DIR/lib/jackson-core-2.16.1.jar:$JAVA_DIR/lib/jackson-databind-2.16.1.jar:$JAVA_DIR/lib/jackson-datatype-jsr310-2.16.1.jar:$JAVA_DIR/lib/snakeyaml-2.2.jar:$JAVA_DIR/lib/jackson-annotations-2.16.1.jar:$JAVA_DIR/lib/slf4j-api-2.0.9.jar:$JAVA_DIR/lib/logback-classic-1.4.14.jar:$JAVA_DIR/lib/logback-core-1.4.14.jar"
-
-echo "Module Path: $MODULE_PATH" >> "$LOG_FILE"
-echo "Classpath: $CLASSPATH" >> "$LOG_FILE"
-
-# Set up Java options
-JAVA_OPTS="--module-path $MODULE_PATH --add-modules javafx.base,javafx.controls,javafx.fxml -Xmx1024m -Dfile.encoding=UTF-8 -Djava.awt.headless=false"
-
-# Add macOS specific options
-JAVA_OPTS="$JAVA_OPTS -Xdock:name=OpenTeam"
-if [ -f "$APP_ROOT/Resources/OpenTeam.icns" ]; then
-    JAVA_OPTS="$JAVA_OPTS -Xdock:icon=$APP_ROOT/Resources/OpenTeam.icns"
+# Check if main JAR exists
+MAIN_JAR="$JAVA_DIR/OpenTeam.jar"
+if [ ! -f "$MAIN_JAR" ]; then
+    log_message "ERROR: Main application JAR not found at: $MAIN_JAR"
+    exit 1
 fi
 
-echo "Java Options: $JAVA_OPTS" >> "$LOG_FILE"
+# Check if config file exists
+CONFIG_FILE="$OPENTEAM_DIR/config.yml"
+if [ ! -f "$CONFIG_FILE" ]; then
+    log_message "WARNING: Configuration file not found at: $CONFIG_FILE"
+    log_message "Please create ~/.openteam/config.yml with your database settings"
+fi
 
-# Launch the application
-echo "Launching application..." >> "$LOG_FILE"
-exec "$JAVA_CMD" $JAVA_OPTS -cp "$CLASSPATH" com.openteam.OpenTeamApplication "$@" >> "$LOG_FILE" 2>&1
+log_message "Starting OpenTeam application..."
+
+# Check if we have the JavaFX JARs in the lib directory - use them if available
+JAVAFX_PATH=""
+if [ -d "$JAVA_DIR/lib" ]; then
+    JAVAFX_JARS=$(ls "$JAVA_DIR/lib"/javafx-*-mac-aarch64.jar 2>/dev/null | tr '\n' ':')
+    if [ -n "$JAVAFX_JARS" ]; then
+        log_message "Found platform-specific JavaFX JARs, using module path approach"
+        JAVAFX_PATH="--module-path $JAVAFX_JARS --add-modules javafx.controls,javafx.fxml"
+    fi
+fi
+
+if [ -z "$JAVAFX_PATH" ]; then
+    log_message "Using shaded JAR approach for JavaFX"
+fi
+
+log_message "JavaFX configuration: $JAVAFX_PATH"
+
+# Launch the application with proper configuration
+exec "$JAVA_EXECUTABLE" \
+    -Xms256m \
+    -Xmx1024m \
+    -Dfile.encoding=UTF-8 \
+    -Djava.awt.headless=false \
+    -Dprism.order=sw,es2,d3d \
+    -Dprism.allowhidpi=true \
+    -Dlogback.configurationFile="$JAVA_DIR/logback.xml" \
+    --add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
+    --add-opens=java.base/java.lang=ALL-UNNAMED \
+    --add-opens=java.base/java.text=ALL-UNNAMED \
+    --add-opens=java.base/java.util=ALL-UNNAMED \
+    --add-opens=java.desktop/java.awt.font=ALL-UNNAMED \
+    $JAVAFX_PATH \
+    -jar "$MAIN_JAR" \
+    >> "$LOG_FILE" 2>&1
