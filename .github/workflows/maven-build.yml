@@ -1,8 +1,30 @@
+name: Maven Build
+
 on:
   push:
     branches:
-      - "main"
+      - '*'
   pull_request:
+    types:
+      - opened
+      - synchronized
+  pull_request_target:
+    types:
+      - closed
     branches:
-      - "main"
-  merge_group:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Set up JDK
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+
+      - name: Build with Maven
+        run: mvn clean install
