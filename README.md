@@ -15,6 +15,7 @@ A JavaFX desktop application for team communication and software deployment trac
 
 - **Java 21** (LTS)
 - **JavaFX 21** for desktop UI
+- **React 18** for the optional web UI
 - **PostgreSQL 15+** for data storage
 - **Maven 3.9+** for build management
 - **HikariCP** for connection pooling
@@ -115,10 +116,12 @@ See [PACKAGING.md](PACKAGING.md) for detailed packaging instructions.
 ## Project Structure
 
 ```
+frontend/                              # React web front end
 src/
 ├── main/
 │   ├── java/com/openteam/
 │   │   ├── OpenTeamApplication.java     # Main application entry point
+│   │   ├── api/                         # REST controllers for web front end
 │   │   ├── config/                      # Configuration management
 │   │   ├── controller/                  # JavaFX Controllers
 │   │   ├── model/                       # Entity classes
@@ -129,6 +132,24 @@ src/
 │       ├── fxml/                        # JavaFX FXML files
 │       ├── css/                         # Stylesheets
 │       └── sql/                         # Database scripts
+```
+
+## Web Front End
+
+An experimental React application lives in the `frontend/` directory. It reuses the same Java backend via REST APIs exposed by
+`OpenTeamApiServer`.
+
+### Running the API server
+
+```bash
+mvn exec:java -Dexec.mainClass=com.openteam.api.OpenTeamApiServer
+```
+
+### Running the React app
+
+```bash
+cd frontend
+npm start
 ```
 
 ## Usage
