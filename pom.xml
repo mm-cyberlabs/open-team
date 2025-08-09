@@ -75,6 +75,13 @@
             <version>${jackson.version}</version>
         </dependency>
 
+        <!-- Lightweight HTTP server for REST APIs -->
+        <dependency>
+            <groupId>com.sparkjava</groupId>
+            <artifactId>spark-core</artifactId>
+            <version>2.9.4</version>
+        </dependency>
+
         <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
