@@ -15,7 +15,7 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v2
         with:
-          java-version: '11'
-          distribution: 'ubuntu-latest'
+          java-version: '21'
+          distribution: 'temurin'
       - name: Build with Maven
         run: mvn clean install
