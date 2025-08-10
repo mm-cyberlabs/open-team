@@ -2,6 +2,7 @@ package com.openteam.api;
 
 import static spark.Spark.*;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openteam.model.Activity;
 import com.openteam.model.Announcement;
@@ -36,7 +37,14 @@ public class OpenTeamApiServer {
         get("/api/deployments/:id", (req, res) -> {
             res.type("application/json");
             return deploymentRepo.findById(Long.valueOf(req.params(":id")))
-                    .map(mapper::writeValueAsString)
+                    .map(item -> {
+                        try {
+                            return mapper.writeValueAsString(item);
+                        } catch (JsonProcessingException e) {
+                            res.status(500);
+                            return "{\"error\":\"serialization error\"}";
+                        }
+                    })
                     .orElseGet(() -> {
                         res.status(404);
                         return "{}";
@@ -74,7 +82,14 @@ public class OpenTeamApiServer {
         get("/api/target-dates/:id", (req, res) -> {
             res.type("application/json");
             return targetDateRepo.findById(Long.valueOf(req.params(":id")))
-                    .map(mapper::writeValueAsString)
+                    .map(item -> {
+                        try {
+                            return mapper.writeValueAsString(item);
+                        } catch (JsonProcessingException e) {
+                            res.status(500);
+                            return "{\"error\":\"serialization error\"}";
+                        }
+                    })
                     .orElseGet(() -> {
                         res.status(404);
                         return "{}";
@@ -112,7 +127,14 @@ public class OpenTeamApiServer {
         get("/api/activities/:id", (req, res) -> {
             res.type("application/json");
             return activityRepo.findById(Long.valueOf(req.params(":id")))
-                    .map(mapper::writeValueAsString)
+                    .map(item -> {
+                        try {
+                            return mapper.writeValueAsString(item);
+                        } catch (JsonProcessingException e) {
+                            res.status(500);
+                            return "{\"error\":\"serialization error\"}";
+                        }
+                    })
                     .orElseGet(() -> {
                         res.status(404);
                         return "{}";
@@ -150,7 +172,14 @@ public class OpenTeamApiServer {
         get("/api/announcements/:id", (req, res) -> {
             res.type("application/json");
             return announcementRepo.findById(Long.valueOf(req.params(":id")))
-                    .map(mapper::writeValueAsString)
+                    .map(item -> {
+                        try {
+                            return mapper.writeValueAsString(item);
+                        } catch (JsonProcessingException e) {
+                            res.status(500);
+                            return "{\"error\":\"serialization error\"}";
+                        }
+                    })
                     .orElseGet(() -> {
                         res.status(404);
                         return "{}";
